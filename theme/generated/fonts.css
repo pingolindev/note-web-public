@@ -1,0 +1,11 @@
+/* Auto-generated from the design tokens — do not edit manually */
+/* Pingolin brand typography: IBM Plex Sans (body/display) + IBM Plex Mono (code) */
+/*
+ * Font files are loaded per-app via @fontsource imports (self-hosted,
+ * no third-party network traffic). See each app's entrypoint for the
+ * exact weights imported — privacy-first, so the browser never reaches
+ * out to fonts.googleapis.com.
+ *
+ * The font stacks are --font-body and --font-mono in {app}.css; this file
+ * has no @import and no @font-face.
+ */

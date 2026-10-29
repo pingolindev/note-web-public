@@ -1,0 +1,218 @@
+/* Auto-generated from the design tokens — do not edit manually */
+/* Shared web primitives used by all Pingolin web surfaces. */
+/* Depends on CSS variables emitted by {app}.css. */
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s;
+  user-select: none;
+}
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.3);
+}
+
+.btn-primary {
+  background: var(--accent-color);
+  color: var(--on-primary, #fff);
+}
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+.btn-secondary:hover:not(:disabled) { background: var(--bg-hover); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--outline);
+}
+.btn-outline:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--accent-color);
+}
+
+.btn-danger {
+  background: var(--error);
+  color: var(--on-error);
+}
+.btn-danger:hover:not(:disabled) { opacity: 0.9; }
+
+.btn-sm { padding: 6px 14px; font-size: 0.8125rem; border-radius: var(--radius-sm); }
+.btn-lg { padding: 14px 22px; font-size: 1rem; }
+
+/* ---------- Inputs ---------- */
+.input,
+.input-field {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 0.875rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input:focus,
+.input-field:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
+}
+.input::placeholder { color: var(--text-muted); }
+
+/* ---------- Cards ---------- */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---------- Chips / pills ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+.chip-accent {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent-color);
+}
+
+/* ---------- Badges ---------- */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+/* --on-primary, not #fff: white is 3.32:1 on the dark accent for track/auth
+   and 2.77:1 for note. The #fff fallback only applies where the app
+   stylesheet does not define --on-primary. */
+.badge-accent { background: var(--accent-color); color: var(--on-primary, #fff); }
+.badge-muted  { background: var(--text-muted); color: var(--bg-primary); }
+/* --on-success, not #fff: white is 2.54:1 on this fill in light mode and
+   1.92:1 in dark. */
+.badge-success { background: var(--success); color: var(--on-success, #fff); }
+.badge-warning { background: var(--warning); color: #000; }
+.badge-error  { background: var(--error); color: var(--on-error); }
+
+/* ---------- Dialog / modal ---------- */
+.dialog-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  padding: var(--space-xl);
+}
+.dialog {
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow: auto;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+.dialog-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom: 1px solid var(--border-color);
+}
+.dialog-header h2 { font-size: 1.125rem; font-weight: 600; margin: 0; }
+.dialog-body { padding: var(--space-xl); }
+.dialog-footer {
+  display: flex; gap: var(--space-sm); justify-content: flex-end;
+  padding: var(--space-lg) var(--space-xl);
+  border-top: 1px solid var(--border-color);
+}
+
+/* ---------- Empty state ---------- */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: var(--space-3xl) var(--space-xl);
+  text-align: center;
+  gap: var(--space-md);
+  color: var(--text-muted);
+}
+.empty-state-icon {
+  width: 64px; height: 64px;
+  opacity: 0.5;
+  color: var(--text-muted);
+}
+.empty-state-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.empty-state-caption {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+/* ---------- Alerts / message boxes ---------- */
+.alert {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+.alert-error   { background: var(--error-container); color: var(--on-error-container); border-color: var(--error); }
+.alert-success { background: var(--success-container); color: var(--text-primary); border-color: var(--success); }
+.alert-warning { background: var(--warning-container); color: var(--text-primary); border-color: var(--warning); }
+
+/* ---------- Loading ---------- */
+.loading-wrapper {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100vh; gap: var(--space-lg);
+}
+.loading-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: pingolin-spin 0.8s linear infinite;
+}
+@keyframes pingolin-spin { to { transform: rotate(360deg); } }

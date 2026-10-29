@@ -1,0 +1,5674 @@
+/*
+ * Copyright (c) 2026 Pingolin LLC
+ * This file is part of Pingolin Note.
+ *
+ * Pingolin Note is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Pingolin Note is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Pingolin Note. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/* Design tokens: shared Pingolin theme pipeline (theme/generate.sh) */
+@import '../../theme/generated/fonts.css';
+@import '../../theme/generated/note.css';
+@import '../../theme/generated/primitives.css';
+
+:root {
+  /* Build marker — changing the value forces a new CSS asset
+     hash, which evicts a bad response held in an edge cache. */
+  --pingolin-build: "2026-04-23a";
+  /* Radius system: dense controls, surfaces, and chips-are-pills.
+     Every chip radius (12/16/24) is its height/2 — the pill token
+     makes the rule explicit. */
+  --r-control: 4px;
+  --r-surface: 8px;
+  --r-pill: 999px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Login */
+.login-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 40px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow-hover);
+}
+.login-card h1 {
+  font-size: 24px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.login-card > p {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  text-align: center;
+  font-size: 14px;
+}
+.auth-link {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.auth-link a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+.auth-link a:hover { text-decoration: underline; }
+
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+/* 16px, not 14. Every text field in this app renders inside a WebView on a
+   phone as well as in a desktop browser, and WebKit ZOOMS THE LAYOUT when a
+   field with a sub-16px font takes focus — `ui/index.html` sets no
+   `maximum-scale`, so there is nothing to stop it. The user taps their display
+   name in Settings and ends up panned into a corner of the panel.
+   16 is also the "body" type role; 14 is off the five-role scale. */
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 16px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
+}
+
+.forgot-password {
+  text-align: right;
+  margin-bottom: 16px;
+}
+.forgot-password a {
+  font-size: 13px;
+  color: var(--accent-color);
+  text-decoration: none;
+}
+.forgot-password a:hover { text-decoration: underline; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+  /* `.btn` is worn by <a> as well as <button> (the links out to the account
+     portal). Without these an anchor-button carries the default underline and
+     wraps its label, so it renders taller and busier than the real buttons
+     beside it (a 43px underlined CTA next to 28px buttons). */
+  text-decoration: none;
+  white-space: nowrap;
+  /* A BARE `.btn` is this codebase's primary button — NoteComposer writes
+     `btn btn-sm btn-secondary` for Discard and plain `btn btn-sm` for Save,
+     and Sidebar/SelectionBar/ReminderPicker/NoteModal all do the same for
+     Save / Add / Set / Close. Without a background here all of those would
+     render in the browser's DEFAULT button chrome — a light grey box that
+     ignores the theme, which on the dark phone UI reads as a shouting white
+     button. A class that styles nothing does not fail, it inherits the
+     platform's idea of a button.
+     `.btn-secondary` / `.btn-link` still override this. */
+  background: var(--accent-color);
+  color: var(--on-primary);
+}
+.btn:hover:not(:disabled) { background: var(--accent-hover); }
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--accent-color);
+  color: var(--on-primary);
+}
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+.btn-secondary:hover:not(:disabled) { background: var(--bg-hover); }
+/* Text-weight action: no fill, secondary text colour and a hover wash.
+   `.btn btn-link` is used throughout the import surface. */
+.btn-link {
+  background: none;
+  color: var(--text-secondary);
+  padding: 10px 12px;
+}
+.btn-link:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.login-btn {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.error-message {
+  background: var(--error-container);
+  border: 1px solid var(--error);
+  color: var(--on-error-container);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.resend-verification { margin-top: 8px; }
+.resend-link {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  cursor: pointer;
+  font-size: 13px;
+  text-decoration: underline;
+}
+.resend-link:disabled { opacity: 0.6; cursor: not-allowed; }
+.resend-success { color: var(--success-text); font-size: 13px; }
+
+.hint-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* 2FA Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+.modal-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow-hover);
+  padding: 32px;
+}
+.modal-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.modal-header h2 {
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+.modal-header p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.modal-content { margin-bottom: 16px; }
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* The app's confirmation dialog (components/ConfirmDialog), used instead of
+   `window.confirm()`, which renders in the OS's own chrome — light,
+   unthemed, and identical whether the answer deletes a note forever or
+   moves it somewhere it can be fetched back from. */
+.confirm-dialog { max-width: 400px; padding: 24px; }
+.confirm-dialog .modal-header { text-align: left; margin-bottom: 4px; }
+.confirm-dialog .modal-header h2 { font-size: 17px; line-height: 1.35; }
+.confirm-dialog .modal-header p { margin-top: 8px; line-height: 1.45; }
+.confirm-actions {
+  justify-content: flex-end;
+  gap: 8px;
+}
+/* Destructive confirm — the filled button on a "delete forever".
+ *
+ * NOT `--error` / `--on-error`, which is what the pair is nominally FOR.
+ * Measured, that pair does not carry text:
+ *
+ *   light  #e53935 on #ffffff  4.23:1
+ *   dark   #f87171 on #7f1d1d  3.62:1
+ *
+ * against the 4.5:1 WCAG AA needs for 14px/600 — and no `--on-error` rescues
+ * the light case, because white is already the maximum contrast available
+ * against a red that light. So the FILL is what has to move.
+ *
+ * Deliberately set here rather than in `theme/tokens.json`. `--error` is
+ * overwhelmingly used as a FOREGROUND in this app (`.card-action-danger:hover`,
+ * `.selection-bar-btn-danger:hover`, `.reminder-preset-danger`), where the dark
+ * theme's bright #f87171 on a dark card is correct and darkening it would make
+ * things worse; and the token is shared with the other Pingolin apps, both
+ * Android apps included, where `colorOnError` is wired into the Material theme,
+ * so moving it is a cross-app change.
+ *
+ * Light: a darker fill so white clears AA. Dark: keep the theme's bright red as
+ * the fill — it is what the rest of the dark UI already uses for danger, and it
+ * separates cleanly from the #1e1e32 card — and darken the TEXT instead.
+ *
+ * Measured:  light  #ffffff on #c62828  5.62:1     hover #ad2121  6.96:1
+ *            dark   #450a0a on #f87171  5.84:1     hover #f45b5b  4.99:1
+ * and each fill clears 3:1 against its card, so the button itself is findable.
+ * confirmDialogUsage.test.ts recomputes all of this from this stylesheet.
+ */
+.btn-danger {
+  background: #c62828;
+  color: #ffffff;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #ad2121;
+}
+:root.dark .btn-danger {
+  background: var(--error);
+  color: #450a0a;
+}
+:root.dark .btn-danger:hover:not(:disabled) {
+  background: #f45b5b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.light) .btn-danger {
+    background: var(--error);
+    color: #450a0a;
+  }
+  :root:not([data-theme="light"]):not(.light) .btn-danger:hover:not(:disabled) {
+    background: #f45b5b;
+  }
+}
+
+/* Wide, scrollable variant of .modal-card for dialogs that host a whole
+   surface (import). Keeps the same card look as every other dialog so a
+   bigger job doesn't turn into a differently-styled screen. */
+.modal-card-lg {
+  max-width: 720px;
+  max-height: 85vh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* Title on the left, close on the right — .modal-header on its own is
+   centred, which leaves nowhere for the close button to sit. */
+.modal-card-lg .modal-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  margin: 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+.modal-card-lg .modal-header-bar h2 {
+  margin: 0;
+}
+.modal-scroll {
+  overflow-y: auto;
+  padding: 4px 20px 20px;
+}
+
+/* Stacked label + full-width control for a dialog form. (`.settings-row`
+   / `.settings-hint` carry no CSS at all: with them the label and the
+   input simply flow over each other.) */
+.dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.dialog-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--input-bg, var(--card-bg));
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+}
+.dialog-field input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+/* PromptDialog's passphrase field — `.dialog-field` for the box (it is the
+   same input and the same secret as the export dialog's), `.prompt-field` for
+   nothing but positioning the reveal toggle inside it.
+   The field is input-then-button with no label element between them, so
+   centring on the wrapper's own height is centring on the input. */
+.prompt-field { position: relative; }
+/* Clears the toggle. "Show"/"Hide" at 13px is ~44px of text plus its padding;
+   60 leaves the caret a visible gap rather than running the passphrase
+   underneath the word that hides it. */
+.prompt-field input { padding-right: 60px; }
+.prompt-reveal {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--r-control);
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.prompt-reveal:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.prompt-reveal:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
+  color: var(--text-primary);
+}
+/* Revealing a passphrase is a deliberate act on a small word; give it the
+   floor where fingers are the input. The input's own reserve grows with it. */
+@media (max-width: 600px) {
+  .prompt-field input { padding-right: 72px; }
+  .prompt-reveal { min-height: 44px; padding: 12px 10px; }
+}
+.dialog-hint {
+  margin-top: 10px;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+/* `.dialog-error` — the shape of `.dialog-hint`, in the ink that says a thing
+   went wrong. Used by ExportDialog for the shell's "this backup is too large
+   to save from the app", which an `alert()` could not show inside a shell at
+   all.
+   `--error-text`, NOT `--error`: measured, `--error` as ink is 3.46:1 on the
+   light surfaces this app paints on, which fails AA for body text; the ink
+   token is 5.38:1 on the same worst case. `--error` stays correct as a FILL
+   and is untouched everywhere it is one.
+   13px rather than the hint's 12 because 13 is on the five-role type scale
+   and this is the line that must actually be read. */
+.dialog-error {
+  margin-top: 10px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--error-text);
+}
+/* ---- Import surface -------------------------------------------------
+   Rendered both as the /import route and inside the Settings import dialog. */
+.import-view {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 20px 32px;
+}
+/* In the dialog the modal supplies the frame and the scroll. */
+.import-view-embedded {
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+.import-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.import-header h1 {
+  font-size: 20px;
+  margin: 0;
+}
+.import-section {
+  margin-bottom: 28px;
+}
+.import-section h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 2px;
+  color: var(--text-primary);
+}
+.import-section .muted,
+.import-view .muted {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+.import-view .error {
+  color: var(--danger-color, #c0392b);
+  font-size: 13px;
+}
+
+/* One tappable row per provider: brand dot, name + how it imports, chevron. */
+.provider-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--text-primary);
+  transition: border-color 0.15s, background 0.15s;
+}
+.provider-card:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-color);
+}
+.provider-card-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  /* Set per provider by an inline `--brand` custom property. */
+  background: var(--brand, var(--accent-color));
+}
+.provider-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.provider-card-text strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.provider-card-text small {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.provider-card-chevron {
+  color: var(--text-muted);
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.import-walkthrough .walkthrough-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.walkthrough-header h2 {
+  font-size: 17px;
+  margin: 0;
+}
+.walkthrough-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.walkthrough-instructions {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+.walkthrough-instructions ol,
+.walkthrough-instructions ul {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+.walkthrough-instructions li { margin: 4px 0; }
+.walkthrough-caveats {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.walkthrough-caveats ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+/* Primary first, then the quiet cancel — same order as every other dialog. */
+.walkthrough-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+.import-progress {
+  padding: 8px 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.import-progress ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.passkey-section {
+  text-align: center;
+  padding: 16px 0;
+}
+.passkey-icon {
+  color: var(--accent-color);
+  margin-bottom: 12px;
+}
+.passkey-section p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.totp-input {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 24px;
+  text-align: center;
+  letter-spacing: 8px;
+  padding: 12px;
+}
+
+/* Loading */
+.loading-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Keep-style header */
+.keep-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.keep-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-color);
+  gap: 16px;
+  flex-shrink: 0;
+}
+.keep-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.keep-header-left h1 {
+  font-size: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.keep-logo { color: var(--accent-color); }
+
+.keep-header-center { flex: 1; max-width: 600px; }
+
+/* The guardian disclosure under the search bar. Quiet enough not to shout at
+   somebody every time they open the app, legible enough that it is not a
+   disclaimer hidden in plain sight — this is the only place the account's own
+   user is told their notes are readable by whoever holds the password. */
+/* The long form, in settings. Bordered rather than coloured as a warning: this
+   is a fact about the account, and a red alarm every time somebody opens
+   settings would train them to stop reading it. */
+.guardian-managed-notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color, #dadce0);
+  border-left: 3px solid var(--accent-color, #1a73e8);
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.guardian-managed-notice p { margin: 8px 0 0; color: var(--text-secondary, #5f6368); }
+
+.guardian-managed-line {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--text-secondary, #5f6368);
+}
+/* `margin-left: auto` pins the control cluster to the right edge. Without it
+   the flex row's leftover space collects AFTER the last child: once
+   `.keep-header-center` hits its 600px cap the surplus pools at the end of the
+   row, leaving Refresh/Settings/Sign-out huddled in the middle with a third of
+   the strip empty to their right. */
+.keep-header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.sync-indicator {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 0 8px;
+}
+
+/* Main content */
+.keep-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  /* The board gets the screen, up to a point.
+     A 1200px cap is exactly four 280px columns — the grid would be FOUR
+     columns at 1280 and still four at 3440, and more than half a 2560 screen
+     would be empty margin (53% unused at 2560, 65% at 3440).
+     The usual reason to cap a layout — text lines growing unreadably long —
+     does not apply, because `.notes-grid` is `repeat(auto-fill, 280px)`:
+     a wider board adds COLUMNS and never stretches a card. On a 2560 screen
+     that is 13 notes visible without scrolling instead of 5.
+     ⚠️ And it does not make a reorder churn more. Measured on an 81-note
+     account, one drag: 4 columns moved 3 cards a total of 1988px, 7 columns
+     moved the same 3 a total of 1184px — a wider board is a SHORTER one, so a
+     displaced card steps sideways by one column instead of wrapping a row.
+     A cap rather than none at all: past roughly eight columns the far edges
+     need head movement rather than eye movement, a drag across the board
+     becomes a journey of thousands of px, and the 600px composer and header
+     centre stop reading as part of the same page. */
+  /* ⚠️ A WHOLE NUMBER OF COLUMNS, so the board is CENTRED rather than packed
+     left with all the slack on one side.
+     `.notes-grid` lays out `repeat(auto-fill, 280px)` with a 16px gap, so it
+     only ever uses `n * 296 - 16` of whatever it is given; anything left over
+     collects on the right (`justify-content: start`) — unsnapped, the cards
+     sit 40px left of centre at 1280 and 120px at 1440.
+     Centring the GRID alone would not do: the "Pinned" / "Other notes" labels
+     and the composer are siblings, and they would stay at the left edge.
+     Snapping the CONTAINER keeps every one of them aligned with the first
+     column, and `margin: 0 auto` then centres the lot.
+     2088 is seven columns exactly (7*280 + 6*16 + 32 of padding).
+     The plain `max-width` below is the fallback: where `round()` is missing the
+     declaration is dropped and the container keeps the plain 2088px cap. */
+  max-width: 2088px;
+  max-width: min(2088px, calc(round(down, 100% - 16px, 296px) + 16px));
+  margin: 0 auto;
+  width: 100%;
+}
+/* The phone layout is `repeat(2, 1fr)` — fluid columns that fill the width —
+   so snapping to 280px tracks there would squeeze the board into a narrow
+   strip. Below the breakpoint the container simply takes the screen. */
+@media (max-width: 600px) {
+  .keep-main { max-width: none; }
+}
+
+/* Same control as `.note-modal-maximize`, same size and placement logic — it
+   rides the title line next to the toolbar caret. `flex: 0 0 auto` so a long
+   title cannot squeeze it. */
+.composer-maximize {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.composer-maximize:hover { color: var(--text-primary); background: var(--bg-hover); }
+/* Not on a phone: there the composer is ALREADY full screen the moment it is
+   expanded (`.composer-fullscreen`, in the max-width: 600px block), so the
+   button would do nothing except crowd the toolbar caret — which is itself
+   phone-only, `button.chrome-toggle { display: none }` being the base rule. */
+@media (max-width: 600px) {
+  .composer-maximize { display: none; }
+}
+
+/* Composer (Take a note...) */
+.composer {
+  /* WIDE ENOUGH FOR THE WHOLE TOOLBAR. At 600px the format row wraps and
+     Quote — the last button — drops onto a second line on its own.
+     `.format-toolbar` wraps BY DESIGN (see its own note: unwrapped, the flex
+     row shrinks every button below its content and the text ones break
+     character-per-line), so the answer is width, not nowrap. Stepping the
+     width until the toolbar height falls from 74px to 42px shows it stops
+     wrapping at 620px. 700 leaves room for the maximize button and for one
+     or two more, without the composer starting to compete with the board
+     behind it.
+     ⚠️ Below 600px none of this applies: the phone rules give the toolbar a
+     horizontal scroll with a fade instead, so it can never wrap there. */
+  max-width: 700px;
+  margin: 0 auto 24px;
+}
+
+/* FULL SCREEN, on a real screen. `.composer-fullscreen` has its
+   `position: fixed; inset: 0` only inside `@media (max-width: 600px)` —
+   it is how a phone shows the composer at all, driven by `expanded()` and
+   not by a control. This is the deliberate one, and it mirrors
+   `.note-modal`'s maximize so the two editors behave the same way. */
+@media (min-width: 601px) {
+  .composer.composer-maximized {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    margin: 0;
+    max-width: none;
+  }
+  .composer-maximized .composer-expanded {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    overflow: hidden;
+  }
+  .composer-maximized .composer-editor {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+.composer-collapsed {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: text;
+  box-shadow: var(--shadow);
+  background: var(--card-bg);
+}
+.composer-collapsed:hover { box-shadow: var(--shadow-hover); }
+.composer-placeholder {
+  color: var(--text-muted);
+  font-size: 16px;
+}
+.composer-expanded {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: var(--shadow-hover);
+  background: var(--card-bg);
+}
+/* 18px — the "emphasis" role, the same one `.note-card-title` uses. At 15px
+   it would be (a) smaller than the 16px body text directly underneath it,
+   so the field labelled Title would render as a slightly bold first
+   paragraph and the hierarchy would be inverted at the exact moment the
+   user decides whether to give the note a title, and (b) not one of the
+   five type roles. 18 also keeps it over the 16px iOS zoom threshold. The
+   saved note's own title is 22px (`.note-modal-title`), so the field still
+   grows on save rather than shrinking below its own body first. */
+.composer-title {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 18px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 4px 0;
+  margin-bottom: 4px;
+}
+.composer-body {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+  color: var(--text-primary);
+  resize: none;
+  font-family: inherit;
+  line-height: 1.5;
+}
+/* The composer's copy of `.format-toolbar` — same element, both classes. Its
+   rule is border-TOP where the modal's is border-bottom, and that border
+   belongs to `.format-toolbar-row` for the reason given there (a border on
+   the toolbar stops short of the collapse caret beside it). The offsets move
+   with it, so the toolbar itself carries none of them. */
+.composer-toolbar {
+  padding: 2px 0;
+  border-bottom: none;
+  border-top: none;
+  margin-top: 0;
+}
+.composer-editor {
+  min-height: 60px;
+  padding: 4px 0;
+}
+.composer-editor .cm-editor { height: 100%; }
+.composer-editor .cm-content { min-height: 60px; }
+.composer-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 0;
+  border-top: 1px solid var(--border-color);
+}
+.composer-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border-color);
+}
+.composer-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-color);
+}
+.btn-sm {
+  padding: 6px 16px;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+/* Tabs */
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+.tab {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  /* 3px, and the same 3px transparent on the inactive state, so selecting a
+     tab does not shift the row by a pixel. */
+  border-bottom: 3px solid transparent;
+  font-size: 16px;
+  font-weight: 500;
+}
+.tab:hover { color: var(--text-primary); }
+.tab.active {
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
+  font-weight: 600;
+}
+
+/* Section labels (Pinned / Others) */
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding: 8px 0 4px;
+}
+.inbox-group-label {
+  /* Inbox group headers are per-sharer — give them more breathing
+   *  room so the per-sender section is visually distinct. */
+  padding-top: 20px;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Notes grid — CSS grid, row-major.
+ *
+ * Not `columns: 240px` masonry, for two measured reasons, both consequences
+ * of the same property:
+ *
+ * 1. READING ORDER. CSS multi-column *balances* the flow — it fills column 1
+ *    with the first half of the document and column 2 with the second half.
+ *    Measured at 411px: DOM indices 0..17 in the left column, 18..44 in the
+ *    right. In a date-sorted list that puts the 19th-newest note directly
+ *    beside the newest, and there is no position on screen where "everything
+ *    above this is newer" is true. Grid flows row-major, so it is.
+ *
+ * 2. CARD WIDTH IS NON-MONOTONIC IN WINDOW WIDTH. `columns: <length>` is a
+ *    MINIMUM that then stretches to fill, so the column count steps while the
+ *    width sawtooths: measured 1039px -> 3 x 325px, 1040px -> 3 x 240px. One
+ *    pixel of window drag re-wraps every title and preview 26% narrower.
+ *    An explicit 280px track means card width never changes at all; the
+ *    leftover collects as one gutter on the right (`justify-content: start`,
+ *    so cards keep the content column's left edge — the same 56/136/16 the
+ *    tab strip, filter row and section labels sit on).
+ *
+ * Grid rows alone would align cards instead of packing them; the stacking
+ * rule below packs them Keep-style without giving up the row-major order.
+ * `align-items: start` keeps each card its own content height — without it
+ * grid stretches every card in a row to the tallest one.
+ *
+ * Drag/FLIP is unaffected: `lib/flip.ts` measures `offsetLeft`/`offsetTop` and
+ * `getBoundingClientRect`, which mean the same thing under grid, and
+ * `.note-card.dragging { visibility: hidden }` still holds the slot open. */
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 280px);
+  justify-content: start;
+  /* LOAD-BEARING for the stacking. The cards must keep their own content
+     height; if the grid ever stretches them, lib/masonry.ts starts measuring
+     the TRACK instead of the card and every span freezes at its first value. */
+  align-items: start;
+  column-gap: 16px;
+  /* The gutter is baked into each card's span instead (lib/masonry.ts). A real
+     row-gap applies between every one of the N auto-rows a card spans, not
+     between cards, so an 80-row card would carry 79 gutters inside itself. */
+  row-gap: 0;
+  /* Cards pack in multiples of this. Small enough that the rounding is
+     invisible, large enough not to make thousands of tracks. */
+  grid-auto-rows: 4px;
+  margin-bottom: 16px;
+}
+/* KEEP-STYLE STACKING. Each card spans as many 4px rows as its content needs,
+   so it starts at the first free row in its COLUMN rather than at a shared row
+   boundary — which is what makes the grid stack instead of aligning. Auto
+   placement still fills left-to-right in DOM order, so the reading order stays
+   row-major, which CSS `columns` masonry cannot do (there the top-right card
+   can be the 19th newest note).
+
+   `--card-span` is written by lib/masonry.ts from a measured height. The
+   fallback matters: before the first pass runs, and if JS never runs at all,
+   every card claims the same 60 rows = 240px and the grid renders aligned.
+   That is an unstacked layout, not a broken one — it degrades to aligned rows
+   rather than to overlapping cards. */
+.note-card { grid-row-end: span var(--card-span, 60); }
+
+/* AN EMPTY GRID MUST NOT RESERVE A GUTTER.
+   While the notes are still arriving, NotesView renders the ordinary
+   (unpinned) grid — empty, 0px tall, `childNodes: 0` — and the loading grid
+   below it. With its own `margin-bottom: 16px` the empty one would push the
+   skeleton cards 16px lower than the boot skeleton had just drawn them, and
+   the whole grid would step up again when the notes landed. `:empty` is
+   exact here — a grid with one card has a child. */
+.notes-grid:empty {
+  display: none;
+}
+
+/* THE LOADING CARD HAS TO BE CARD-SIZED.
+   `<div class="note-card note-card-skeleton" />` has no content, so with no
+   height of its own it would collapse to `.note-card`'s 60px `min-height`
+   while the grid still reserves the 240px `--card-span` fallback around it:
+   six stubs floating in rows four times their height, between the boot
+   skeleton's full-size cards and the real ones, for as long as a cold load
+   takes. 240px is the same figure index.html draws, so the boot skeleton
+   hands over to this one without moving anything. */
+.note-card-skeleton {
+  height: 240px;
+}
+
+/* Phone-only editing-chrome toggles — styled (and shown) exclusively in the
+   max-width:600px block below; anywhere wider they render nothing, so a
+   mid-edit rotate past the breakpoint can never strand hidden chrome.
+   ONE class, one button that flips its own glyph. With a separate button for
+   each state in a separate place, opening the toolbar would MOVE the control
+   that closes it and the next tap would land on whatever slid underneath. */
+button.chrome-toggle { display: none; }
+
+/* Note card */
+.note-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px 42px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  position: relative;
+  min-height: 60px;
+  /* No `break-inside: avoid` or `margin-bottom` here: under CSS grid a card
+     cannot split across a column break, and the vertical gutter is baked into
+     each card's span (see `.notes-grid`), so a margin would double it to 32px. */
+  overflow: hidden;
+}
+/* Promote every card to its own compositor layer only while a
+   drag is in progress. This keeps the FLIP transform slide on
+   the GPU (no per-frame repaint) without paying the memory cost
+   of permanent layer promotion for every note on the page. */
+.notes-grid.is-dragging .note-card {
+  will-change: transform;
+}
+.note-card:hover {
+  box-shadow: var(--shadow-hover);
+  border-color: rgba(0,0,0,0.15);
+}
+@media (prefers-color-scheme: dark) {
+  .note-card:hover { border-color: rgba(255,255,255,0.12); }
+}
+.note-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.note-card-preview {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  word-break: break-word;
+  max-height: 300px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent);
+  mask-image: linear-gradient(to bottom, black 85%, transparent);
+}
+.note-card-preview ul, .note-card-preview ol {
+  padding-left: 20px;
+  margin: 4px 0;
+}
+.note-card-preview li { margin: 2px 0; }
+.note-card-preview p { margin: 4px 0; }
+.note-card-preview h1 { font-size: 18px; font-weight: 700; margin: 4px 0; }
+.note-card-preview h2 { font-size: 16px; font-weight: 700; margin: 4px 0; }
+.note-card-preview h3 { font-size: 15px; font-weight: 600; margin: 4px 0; }
+/* h4-h6 reach this renderer too. Without a rule they would inherit the
+   browser default, which is LARGER than the h3 above them. */
+.note-card-preview h4 { font-size: 14px; font-weight: 600; margin: 4px 0; }
+.note-card-preview h5 { font-size: 13px; font-weight: 600; margin: 4px 0; }
+.note-card-preview h6 { font-size: 13px; font-weight: 600; margin: 4px 0; color: var(--text-secondary); }
+.note-card-preview div { margin: 1px 0; }
+
+/* Markdown tables, wherever renderMarkdown's output is mounted: note cards,
+   the modal preview, the import walkthrough. `.md-table` is emitted by that
+   renderer alone, so one unscoped rule set serves all of them.
+
+   `table-layout: fixed` with a full-width table is what keeps a wide table
+   INSIDE a narrow card. The alternative — letting the table size to its
+   content behind `overflow-x: auto` — puts a horizontal scroller inside a
+   card whose whole surface is a click target to open the note. Columns share
+   the width evenly and long cell text wraps. */
+.md-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 6px 0;
+  font-size: 0.95em;
+}
+.md-table th,
+.md-table td {
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.md-table th {
+  background: var(--bg-hover);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.md-table .md-align-left { text-align: left; }
+.md-table .md-align-center { text-align: center; }
+.md-table .md-align-right { text-align: right; }
+
+.note-card-preview code {
+  background: var(--bg-hover);
+  padding: 0 4px;
+  border-radius: 2px;
+  font-size: 13px;
+}
+.note-card-preview blockquote {
+  border-left: 2px solid var(--accent-color);
+  padding-left: 8px;
+  margin: 4px 0;
+  /* A COLOUR, not `opacity: 0.8`.
+   *
+   * Opacity would composite --text-secondary (#555566) against the white card
+   * to an effective #777785 — 4.41:1, where AA wants 4.5:1 — on each
+   * blockquote and on its <strong> child, which inherits the dimming.
+   *
+   * Opacity also hides the failure from any check of the palette: the failing
+   * colour appears in no stylesheet and in no theme token, because nothing
+   * ever declares it. Only the composite fails.
+   *
+   * --text-muted rather than --text-secondary: the preview's body text is
+   * ALREADY --text-secondary (see .note-card-preview above), so matching it
+   * would leave the accent border as the only thing marking a quote.
+   * --text-muted keeps a one-step de-emphasis and passes in both themes —
+   * 5.63:1 on #ffffff, 6.16:1 on the dark --card-bg #1e1e32.
+   *
+   * The two editor previews (.md-live-preview blockquote, .md-preview
+   * blockquote) colour their quotes with a token the same way rather than
+   * dimming them.
+   *
+   * Side effect, deliberate: the accent border is not dimmed either, as it
+   * would be by an opacity applied to the whole element. */
+  color: var(--text-muted);
+}
+.note-card-labels {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.label-chip {
+  font-size: 13px;
+  padding: 3px 10px;
+  background: var(--bg-hover);
+  border-radius: var(--r-pill);
+  color: var(--text-secondary);
+}
+.pin-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: var(--text-muted);
+}
+
+/* Checklist marker in the card's top-right corner, matching mobile — without
+   it a checklist and a note are indistinguishable until you read the body. */
+.checklist-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+/* The pin owns the corner when both apply, so step aside rather than stack. */
+.checklist-badge-shifted {
+  right: 30px;
+}
+/* The corner badges own their spots — the title wraps early instead of
+   running under them, and the selection circle drops BELOW them rather
+   than making them dodge left mid-selection. */
+.note-card:has(.pin-badge) .note-card-title,
+.note-card:has(.checklist-badge) .note-card-title {
+  padding-right: 28px;
+}
+.note-card:has(.checklist-badge-shifted) .note-card-title {
+  padding-right: 52px;
+}
+.note-card:has(.pin-badge, .checklist-badge) .note-card-select {
+  top: 34px;
+}
+
+/* Color bar at top of card / modal */
+.note-color-bar {
+  height: 4px;
+  border-radius: 4px 4px 0 0;
+  margin: -12px -16px 8px;
+}
+.modal-color-bar {
+  height: 6px;
+  border-radius: 8px 8px 0 0;
+  margin: 0;
+}
+
+/* Shared-by provenance chip on inbox notes */
+/* LINE 2, inbound. Same box model as line 1 (.note-card-notebook) and as its
+   outbound counterpart (.note-card-shared-badge): flex, gap 6, no padding,
+   13px, 16px glyph, so the two rows share a left edge — a padded pill would
+   inset its icon from the notebook icon directly above it.
+   No pill: direction is carried by voice ("Shared by …" vs "Sharing") and
+   by the glyph, so a background would be decoration that breaks the
+   alignment it sits in. */
+.note-card-shared {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  min-width: 0;
+}
+
+/* LINE 2 IS ONE LINE, NO MATTER WHAT. A sharer is usually an email address,
+   and a long one wrapped to two or three lines would make the whole card
+   taller for a fact that is secondary to the note. Ellipsize instead; the
+   row's `title` carries the full text for a mouse that rests, and keyboard
+   focus inside the card expands it in place. The glyph never shrinks: an
+   ellipsis after a squashed icon reads as a broken icon, and the two rows
+   share their left edge with the notebook line above.
+
+   ⚠️ NO :hover EXPANSION. In the masonry grid
+   (`.note-card { grid-row-end: span var(--card-span) }`) a card's HEIGHT is
+   its grid span — so growing one card by a line re-packs its whole column.
+   Measured at 1280px: hovering one shared card would take it from 185px to
+   202px and move 35 OTHER CARDS by 16px, every time the pointer crossed it.
+   That is the cursor rearranging the page. Restricting it to devices that
+   can hover does not help: a reflow under the pointer is the same defect
+   wherever it happens, and on a desktop it fires continuously rather than
+   once per tap.
+
+   `:focus-within` stays. It is one deliberate move per Tab rather than a side
+   effect of crossing the grid, and it is the only way a keyboard reaches the
+   full text — a `title` tooltip needs a pointer. (`min-width: 0` on the two
+   rows themselves lives in their own rules above/below — a grouped block here
+   would be the first `{` the source test finds for the badge selector.) */
+.note-card-shared > svg,
+.note-card-shared-badge > svg {
+  flex-shrink: 0;
+}
+.note-card-shared > span,
+.note-card-shared-badge > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.note-card:focus-within .note-card-shared > span,
+.note-card:focus-within .note-card-shared-badge > span {
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+
+/* Notebook badge on card */
+/* "Its notebook is shared" — the same marker the sidebar row carries, so the
+   fact reads identically in both places. Sits on LINE 1 (the notebook) because
+   it is a property of the notebook; line 2 speaks only about this note. */
+.note-card-notebook-shared {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  color: var(--accent-color);
+  opacity: .75;
+}
+
+.note-card-notebook {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Notebook indicator between composer and tabs */
+.notebook-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  margin-bottom: 4px;
+}
+/* The indicator is a dropdown trigger: tap "All Notes" (or the current
+   notebook name) to pick a notebook without opening the sidebar. */
+.notebook-menu-wrap {
+  position: relative;
+}
+.notebook-indicator-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-radius: var(--r-surface);
+  cursor: pointer;
+  font-family: inherit;
+}
+.notebook-indicator-text:hover {
+  background: var(--bg-hover);
+}
+.notebook-indicator-caret {
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+.notebook-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  min-width: 220px;
+  max-width: 320px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--surface-container);
+  border: 1px solid var(--border-color);
+  border-radius: var(--r-surface);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 30;
+}
+.notebook-menu-item {
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 8px 10px;
+  border-radius: var(--r-control);
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.notebook-menu-item:hover {
+  background: var(--bg-hover);
+}
+.notebook-menu-item.active {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+.notebook-menu-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 6px 10px;
+}
+.notebook-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  line-height: 1;
+}
+.notebook-clear:hover { color: var(--text-primary); }
+/* Compose entry points on the indicator line — phone-only (the collapsed
+   "Take a note..." row covers desktop; the phone hides it, see the 600px
+   block) so hidden here at base. */
+.notebook-actions {
+  display: none;
+  margin-left: auto;
+  gap: 4px;
+}
+.notebook-action-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 50%;
+  padding: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.notebook-action-btn:active {
+  background: var(--bg-hover);
+}
+
+/* The touch compose FAB — `.notes-fab-stack` in NotesView.
+ *
+ * Hidden here at base and PAINTED IN THE TOP-LEVEL TOUCH BLOCK ("Touch: the
+ * card's hover-revealed controls do not exist") further down, with the rest of
+ * the touch treatment.
+ *
+ * ⚠️ That block's at-rule is deliberately NOT quoted anywhere above the block
+ * itself, comments included. `shareProvenanceLines.test.ts` locates the
+ * sidebar's own touch block by a bare `indexOf` of the at-rule text and reads
+ * the next 600 characters, so the first occurrence in the file wins — an
+ * earlier mention, even in prose, sends the assertion to the wrong block and
+ * reds the suite.
+ *
+ * Both halves of this rule have to exist: without the `display: none` below,
+ * the stack falls into normal flow at the bottom of the page on every desktop.
+ *
+ * It replaces `.notebook-actions` above on touch, and the reason is a
+ * measurement: those two 44px icons sit 137.4mm from a right-handed thumb
+ * pivot, against a ~75mm comfortable arc and ~95mm stretch — outside even the
+ * stretch zone, so capturing a note costs a grip shift every time. */
+.notes-fab-stack { display: none; }
+
+/* Caret at the end of the Notes/Archive/Trash row: folds the filter row
+   away. Chevron points up while the filters are open (press = collapse),
+   down while collapsed (press = expand). */
+.filter-collapse-caret {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 50%;
+  padding: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.filter-collapse-caret svg {
+  transform: rotate(180deg);
+  transition: transform 0.15s;
+}
+.filter-collapse-caret.collapsed svg {
+  transform: rotate(0deg);
+}
+/* The row is folded and a chip in it is on: a dot, so notes are never left
+   out of the grid with nothing on screen saying so (the title says it too). */
+.filter-collapse-caret.has-active { position: relative; color: var(--accent-color); }
+.filter-collapse-caret.has-active::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-color);
+}
+.filter-collapse-caret:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Card hover actions */
+/* `visibility: hidden`, NOT `opacity: 0`.
+ *
+ * An opacity-0 control is still laid out, still hit-tested and still in the
+ * TAB ORDER: an 18-Tab walk from page load would land on
+ * `.card-action[title="Delete"]` at effective opacity 0, with no visible
+ * focus ring anywhere on screen, and Enter would destroy the note. At 75
+ * notes that is 450 unlit tab stops, one in six of which deletes something.
+ * `visibility: hidden` removes the subtree from the tab order and from hit
+ * testing in one property; the `display: none` already used for touch
+ * (hover:none block below) is the same idea applied where the strip should
+ * not exist at all.
+ *
+ * `visibility` is not an animatable property, so it is paired with opacity:
+ * on HIDE the visibility flip is delayed by the length of the fade, on SHOW
+ * it happens at 0s. The strip therefore still fades in and out. */
+.note-card-actions {
+  display: flex;
+  gap: 4px;
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s, visibility 0s 0.15s;
+}
+/* `:focus-within` so the keyboard reveal matches the pointer reveal — without
+   it, hiding the strip properly would make it keyboard-unreachable instead of
+   keyboard-dangerous. Requires a focusable control inside the card: the
+   `.note-card-open` button (NoteCard.tsx). */
+.note-card:hover .note-card-actions,
+.note-card:focus-within .note-card-actions {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.15s, visibility 0s;
+}
+.note-card[draggable="true"] { cursor: grab; }
+/* Keep-style drag: the source card goes invisible in the grid
+   (layout space preserved so siblings can rearrange around its
+   current slot), while a fixed-position clone elsewhere follows
+   the cursor. Fading and scaling the source in place instead
+   would make it "snap" to preview positions and dominate the
+   visual. */
+.note-card.dragging {
+  visibility: hidden;
+}
+/* The floating clone. Gets the full .note-card styling via
+   cloneNode, plus an accent outline and lifted shadow so it
+   reads as "picked up". Position/left/top are set inline by the
+   drag handler on every mousemove. */
+.note-card-drag-clone {
+  opacity: 0.95;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  border-color: var(--accent-color);
+  will-change: left, top;
+}
+/* THE CLONE CANNOT HOVER, SO IT HAS TO BE TOLD.
+   The select circle and the action strip are hover reveals
+   (`.note-card:hover .note-card-select` / `… .note-card-actions`), and the
+   clone is `pointer-events: none` parented to <body> — never `:hover`, never
+   `:focus-within`. So both would be `visibility: hidden` the instant the card
+   left the grid, even though hover is precisely what the user was looking at
+   when they reached for it: the card in your hand would lose its checkbox and
+   its bottom row.
+
+   ⚠️ `visibility`/`opacity` ONLY — never `display`. On touch both controls are
+   `display: none` outright (the `hover: none` block near the end of this file,
+   which documents why at length), and that has to keep winning: a touch drag
+   must not float a row of controls the platform does not have.
+
+   The sharer line's hover expansion (`.note-card-shared > span`) is
+   deliberately NOT restated here. It is a wrap change, not a reveal, so
+   copying it would make the clone TALLER than the card it was cut from —
+   the one hover effect the clone is better off without. */
+.note-card-drag-clone .note-card-select,
+.note-card-drag-clone .note-card-actions {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* THE HAND-OFF. For the length of the drag the clone has been painting the
+   select circle and the action row; when it lands and the real card takes
+   over, that card has to show them in the SAME frame. Otherwise they run their
+   150ms hover fade at the exact moment the user releases, which reads as the
+   controls blinking out and back: gone at the hand-off frame, faint one frame
+   later, back two frames after that.
+   ⚠️ The card is hidden during the landing with OPACITY, not `visibility`,
+   because a `visibility: hidden` element cannot be `:hover` at all. But that
+   alone is not enough: Chromium re-evaluates `:hover` on pointer events, not
+   on layout, so WHEN a card under a motionless cursor is recognised as hovered
+   after a drop is not something the code can wait for. Killing the transition
+   for a moment makes the answer instant whenever it arrives, instead of
+   starting a fade the user can see. */
+/* A card whose clone is still flying the last leg towards it. Opacity, not
+   `visibility`, for the reason in the hand-off note below: a hidden element
+   cannot be `:hover`, so its controls would start their reveal only once it
+   was painted.
+   ⚠️ A CLASS, not an inline style, and NotesView clears it at the start of
+   every drag and on a timer. Cleared only by the landing animation's own
+   finish/cancel event, any path where that event never arrives (a
+   backgrounded tab freezing the animation, or grabbing the same card again
+   inside the 180ms) would leave the note invisible, which looks exactly like
+   the note being gone. Nothing that hides a card may depend on a single
+   event firing. */
+.note-card-landing { opacity: 0; }
+
+.note-card-handoff .note-card-select,
+.note-card-handoff .note-card-actions {
+  transition: none;
+}
+body.notes-dragging,
+body.notes-dragging * {
+  cursor: grabbing !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* WHILE A CARD IS IN FLIGHT, THE CLONE IS THE ONLY CARD WITH CONTROLS.
+   The clone is drawn over the grid, so whatever card is underneath it is the
+   card the pointer is technically over — and a plain `:hover` reveal lights up
+   its circle and action row. The result is two sets on screen a few dozen
+   pixels apart: one riding the cursor and one sitting still, which reads as
+   the dragged card's controls having been left behind.
+
+   ⚠️ CHROMIUM HIDES THIS AND THE OTHER ENGINES DO NOT. Chromium freezes the
+   hover chain at whatever was under the pointer on mousedown, and since that
+   is the source card — `visibility: hidden`, so neither hoverable nor
+   focusable — nothing in the grid lights up there. Firefox keeps hover live:
+   mid-drag, `document.querySelectorAll('.note-card:hover')` returns the card
+   under the cursor in Firefox and NOTHING in Chromium. Forcing the state in
+   Chromium (CDP `CSS.forcePseudoState(['hover'])`) during a real drag paints
+   both sets; a Chromium drag cannot reach this state by itself.
+
+   Scoped to `.notes-grid` so the clone — which lives at the end of <body> —
+   keeps its own controls.
+
+   This outranks the `.selected` reveal, which sounds like it could hide a
+   selection tick mid-drag. It cannot: `isSelectionMode` is
+   `selectedIds().size > 0` and `isDraggable` requires it to be false, so a
+   selected card and a drag never coexist. */
+body.notes-dragging .notes-grid .note-card:hover .note-card-select,
+body.notes-dragging .notes-grid .note-card:hover .note-card-actions,
+body.notes-dragging .notes-grid .note-card:focus-within .note-card-select,
+body.notes-dragging .notes-grid .note-card:focus-within .note-card-actions {
+  visibility: hidden;
+  opacity: 0;
+}
+/* A CARD IN FLIGHT IS NOT A DROP TARGET.
+   Reordering one card slides several others to new slots, and a card on its
+   way across the grid passes under the cursor — as a target it would take
+   the drag over for a note the user never aimed at. The LAYOUT moved, the
+   pointer did not, and only the pointer expresses intent.
+
+   `note-card-settling` is on the card for exactly as long as its FLIP runs
+   (src/lib/flip.ts). Scoped to a drag, so an ordinary click on a card settling
+   after some unrelated reflow still lands.
+
+   ⚠️ This half only stops HIT TESTING. NotesView's nearest-card fallback
+   searches with querySelectorAll, which pointer-events cannot touch, so it
+   skips the class itself — both halves are needed. */
+body.notes-dragging .note-card-settling {
+  pointer-events: none;
+}
+
+/* Slide animation is handled via the Web Animations API in
+   src/lib/flip.ts (FLIP over the re-flowing grid — transition:all can't
+   follow grid re-flows). Leaving a CSS transition here would
+   race against those WAAPI animations and make the movement jitter. */
+
+/* Danger action for permanent delete.
+   ⚠️ NOT FOR CONTRAST — `--error` as an icon colour measures 4.23:1, over the
+   3.0 that applies to graphics, and the same is true of
+   `.selection-bar-btn-danger:hover` further down. They use `--error-text` so
+   that the rule holds without exceptions: `--error` is a FILL, `--error-text`
+   is INK. A rule with unexplained exceptions in it is how `--error` ends up
+   as body ink at 3.46:1. */
+.card-action-danger:hover {
+  color: var(--error-text);
+}
+.card-action {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* One glyph size for every action circle, so the grid and the modal (the
+   focused surface) draw the same icons. The CSS size wins over the SVGs'
+   width/height attributes. */
+.card-action svg {
+  width: 20px;
+  height: 20px;
+}
+.card-action:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Note modal (Keep-style expand) */
+.note-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 32px;
+}
+.note-modal {
+  width: 100%;
+  /* 600px cannot even hold the format toolbar, so the note itself would be
+     the narrowest thing on screen. 820px is wide enough for a comfortable
+     line length and for the toolbar to sit on one row at desktop widths;
+     `width: 100%` still lets it shrink on small screens, where the toolbar
+     wraps instead of overflowing. */
+  max-width: 820px;
+  max-height: 85vh;
+  background: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+/* The title LINE: the field, the save state, and the toolbar caret.
+ *
+ * All three share the one line instead of costing a row each: the field is
+ * one line of 22px text and both riders are shorter than that, so putting
+ * them on the title's own line costs nothing and leaves more of the modal
+ * to the editor. */
+.note-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 8px;
+}
+.note-titlebar .save-indicator {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+/* Both title fields sit in a flex row, so neither can keep `width: 100%`:
+   an input's default `size` gives it an intrinsic min-width of ~20 characters,
+   which pushes the caret off the right edge of a narrow phone instead of
+   letting the field shrink. `flex: 1; min-width: 0` is what makes it yield. */
+.note-titlebar > input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+.note-modal-title {
+  border: none;
+  outline: none;
+  font-size: 22px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--text-primary);
+  /* The top is 8px, not 16: with a border-topped toolbar row right under
+     the title, more lead above it would just push the text down. 8/4 keeps
+     the field clear of the modal's edge. */
+  padding: 8px 0 4px 16px;
+}
+/* `.composer-title` carries a `margin-bottom` for its stand-alone use; in a
+   centred flex row that would just lift the text off the caret's axis, so it
+   is zeroed here. Its own `padding: 4px 0` and 18px face are kept — the
+   composer card supplies the horizontal inset that `.note-modal-title` has
+   to supply for itself. */
+.note-titlebar .composer-title { margin-bottom: 0; }
+/* Formatting toolbar.
+ *
+ * `.format-toolbar-row` is the flex line holding the scrolling toolbar. The
+ * collapse caret lives on the title line, where it does not shift when the
+ * toolbar it controls appears. (As a `position: sticky` CHILD of the toolbar
+ * it would be pinned over whatever flow content happened to be underneath —
+ * a hit test at its drawn centre would return "Hide formatting toolbar"
+ * while the eye was on "Numbered list".)
+ *
+ * THE BORDER LIVES ON THE ROW, not on the toolbar. The toolbar WRAPS,
+ * so a border on it draws under each wrapped line; the row draws one rule
+ * under the whole block. `:has()` carries the composer's variant — that one
+ * is a border-TOP (`.composer-toolbar`) — rather than asking for a second
+ * class in the markup; `:has()` is already load-bearing in this file for the
+ * `.note-card:has(.pin-badge)` title inset. */
+.format-toolbar-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+}
+.format-toolbar-row:has(.composer-toolbar) {
+  border-bottom: none;
+  border-top: 1px solid var(--border-color);
+  margin-top: 4px;
+}
+.format-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 12px;
+  /* `flex: 1` so the toolbar fills the row; `min-width: 0` so it shrinks
+     rather than forcing the row wider than the modal. */
+  flex: 1;
+  min-width: 0;
+  /* WRAP, never overflow. ~15 buttons need more width than a narrow modal
+     has, and an unwrapped flex row resolves that by SHRINKING every button
+     below its content: the text ones ("B", "</>", "H") then wrap
+     character-per-line, so the inline-code button becomes a vertical
+     "<", "/", ">" stack. The overflow also forces a horizontal
+     scrollbar on the modal, because setting only `overflow-y: auto` makes
+     `overflow-x` compute to `auto` rather than stay `visible`. */
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+.fmt-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  /* Never shrink below the glyph and never break it across lines — a
+     squeezed button would wrap "</>" into three stacked characters. */
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.fmt-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.fmt-btn.fmt-active {
+  background: var(--accent-color);
+  color: var(--on-primary);
+  border-radius: 4px;
+}
+.fmt-mode-btn {
+  font-size: 13px;
+  min-width: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--r-control);
+  gap: 4px;
+  padding: 6px 10px;
+}
+.mode-label { font-size: 13px; font-weight: 500; }
+/* Whether this note follows the global default or is pinned to its own mode.
+   Muted by default because "(default)" is the un-remarkable case; the pinned
+   state gets the accent so a user scanning open notes can see which ones they
+   have overridden. */
+.mode-scope { font-size: 11px; color: var(--text-muted); margin-left: 2px; }
+.mode-scope.pinned { color: var(--accent-color); font-weight: 600; }
+.fmt-color { position: relative; }
+.color-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.fmt-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border-color);
+  margin: 0 4px;
+}
+
+/* ContentEditable body */
+.note-modal-body {
+  flex: 1;
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  line-height: 1.6;
+  padding: 8px 16px;
+  min-height: 150px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.note-modal-body:empty:before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.note-modal-body ul, .note-modal-body ol {
+  margin: 6px 0;
+  padding-left: 24px;
+}
+.note-modal-body li {
+  margin: 4px 0;
+  line-height: 1.5;
+}
+.note-modal-body p { margin: 6px 0; }
+.rich-body ul { list-style-type: disc; }
+.rich-body ol { list-style-type: decimal; }
+.rich-body .checklist, .note-card-preview .checklist,
+.md-preview .checklist, .note-modal-body .checklist {
+  list-style: none;
+  padding-left: 4px;
+}
+.checklist li, li.check {
+  list-style: none;
+}
+.checklist input[type="checkbox"],
+li.check input[type="checkbox"] {
+  margin-right: 8px;
+  vertical-align: middle;
+  cursor: pointer;
+}
+li.checked { text-decoration: line-through; color: var(--text-muted); }
+
+/* CodeMirror note editor */
+.note-editor-cm {
+  flex: 1;
+  min-height: 120px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0 16px;
+}
+.note-editor-cm .cm-editor { height: 100%; }
+.note-editor-cm .cm-content {
+  color: var(--text-primary);
+}
+
+/* Live preview decorations */
+.cm-md-bold { font-weight: 700; }
+.cm-md-italic { font-style: italic; }
+.cm-md-strike { text-decoration: line-through; color: var(--text-muted); }
+.cm-md-link { color: var(--accent-color); text-decoration: underline; }
+/* No `.cm-md-underline`: `__x__` decorates as bold, matching CommonMark,
+   Obsidian and Android's Markwon. */
+.cm-md-code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.9em;
+  background: var(--bg-hover);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+/* Six levels, each visibly distinct — without a rule for h4 and below,
+   `#### ` would fall through to plain paragraph text with its hashes on
+   screen. h5 and h6 step down past body size rather than crowding h4. */
+.cm-md-h1 { font-size: 1.6em; font-weight: 700; line-height: 1.3; }
+.cm-md-h2 { font-size: 1.35em; font-weight: 700; line-height: 1.3; }
+.cm-md-h3 { font-size: 1.15em; font-weight: 600; line-height: 1.3; }
+.cm-md-h4 { font-size: 1.05em; font-weight: 600; line-height: 1.35; }
+.cm-md-h5 { font-size: 1em;    font-weight: 600; line-height: 1.4; }
+.cm-md-h6 { font-size: .92em;  font-weight: 600; line-height: 1.4; color: var(--text-secondary); }
+
+.cm-md-hr {
+  border-bottom: 2px solid var(--border-color);
+  color: transparent;
+  overflow: hidden;
+  height: 0;
+  padding: 8px 0;
+}
+
+.cm-md-blockquote {
+  border-left: 3px solid var(--accent-color);
+  padding-left: 12px;
+  color: var(--text-secondary);
+}
+
+.cm-md-list { padding-left: 4px; }
+.cm-md-bullet { color: var(--text-muted); }
+
+.cm-md-checkbox {
+  margin-right: 6px;
+  vertical-align: middle;
+  accent-color: var(--accent-color);
+}
+.cm-md-checked-line {
+  text-decoration: line-through;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.cm-md-codeblock {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: var(--bg-secondary);
+  padding: 0 8px;
+}
+.cm-copy-btn {
+  float: right;
+  font-size: 11px;
+  padding: 2px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-left: 8px;
+}
+.cm-copy-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.cm-md-codefence {
+  font-size: 0;
+  height: 0;
+  overflow: hidden;
+  padding: 0;
+  line-height: 0;
+  opacity: 0;
+}
+
+/* Callouts — themed left-stripe blockquote variants. */
+.cm-md-callout {
+  border-left: 3px solid var(--callout-color, var(--accent-color));
+  background: color-mix(in srgb, var(--callout-color, var(--accent-color)) 8%, transparent);
+  padding: 2px 12px;
+  color: var(--text-primary);
+}
+.cm-md-callout-opener {
+  font-weight: 600;
+  padding-top: 6px;
+}
+.cm-md-callout-label {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 0.85em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--callout-color, var(--accent-color));
+}
+.cm-md-callout-note,    .callout-note    { --callout-color: #4a90e2; }
+.cm-md-callout-info,    .callout-info    { --callout-color: #4a90e2; }
+.cm-md-callout-tip,     .callout-tip     { --callout-color: #00bfa5; }
+.cm-md-callout-success, .callout-success { --callout-color: #43a047; }
+.cm-md-callout-question,.callout-question{ --callout-color: #7e57c2; }
+.cm-md-callout-warning, .callout-warning,
+.cm-md-callout-todo,    .callout-todo    { --callout-color: #ffa726; }
+.cm-md-callout-failure, .callout-failure,
+.cm-md-callout-danger,  .callout-danger,
+.cm-md-callout-bug,     .callout-bug     { --callout-color: #ef5350; }
+.cm-md-callout-example, .callout-example { --callout-color: #ab47bc; }
+.cm-md-callout-quote,   .callout-quote,
+.cm-md-callout-abstract,.callout-abstract{ --callout-color: var(--text-muted); }
+
+.callout {
+  border-left: 3px solid var(--callout-color, var(--accent-color));
+  background: color-mix(in srgb, var(--callout-color, var(--accent-color)) 8%, transparent);
+  padding: 8px 12px;
+  margin: 8px 0;
+  border-radius: 4px;
+}
+
+/* Inline + block KaTeX math. */
+.cm-md-math-inline,
+.cm-md-math-block,
+.math-block {
+  color: var(--text-primary);
+}
+.cm-md-math-block,
+.math-block {
+  display: block;
+  text-align: center;
+  padding: 6px 0;
+  overflow-x: auto;
+}
+.cm-md-math-inline { display: inline-block; }
+/* Hide KaTeX's MathML alt rendering — we use HTML output above. */
+.cm-md-math-inline .katex-mathml,
+.cm-md-math-block .katex-mathml,
+.math-block .katex-mathml { display: none; }
+
+/* Math awaiting the KaTeX chunk (see lib/markdown). It shows its own source
+   for the few hundred ms before the typesetter lands, so give it the same
+   treatment as inline code — deliberate-looking rather than like a formula
+   that failed to render. No layout shift beyond the glyphs themselves. */
+.math-pending {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  color: var(--text-muted);
+}
+
+/* Fold gutter — blend the column into the editor background, hide
+   markers until the user mouses over the editor (less visual noise on
+   a paragraph-heavy note), and render a single chevron that rotates
+   90° between "open" and "closed" instead of mixing two glyphs. */
+.note-editor-cm .cm-gutters {
+  background: transparent;
+  border-right: none;
+  color: var(--text-muted);
+}
+.cm-foldGutter .cm-gutterElement {
+  cursor: pointer;
+  /* Extra right padding pushes the caret a couple px away from the
+     line text so it never crowds the heading or code-fence. */
+  padding: 0 6px 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cm-md-foldmarker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 120ms ease, color 120ms ease, transform 120ms ease;
+}
+/* Reveal markers when the mouse is anywhere over the editor — keeps
+   the gutter quiet during read mode but offers the affordance the
+   moment the user reaches for it. */
+.note-editor-cm:hover .cm-md-foldmarker { opacity: 0.6; }
+.cm-md-foldmarker:hover { opacity: 1 !important; color: var(--text-primary); }
+.cm-md-foldmarker.open { transform: rotate(90deg); }
+.cm-md-foldmarker.closed { transform: rotate(0deg); }
+.cm-md-foldmarker svg { display: block; }
+
+/* Markdown split editor (legacy fallback) */
+.md-split-editor {
+  display: flex;
+  flex-direction: column;
+  min-height: 100px;
+}
+.md-textarea {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 15px;
+  line-height: 1.6;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 0;
+  min-height: 80px;
+}
+.md-live-preview {
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+.md-live-preview br { line-height: 0.5; }
+.md-live-preview h1, .md-live-preview h2, .md-live-preview h3,
+.md-live-preview h4, .md-live-preview h5, .md-live-preview h6 {
+  margin: 6px 0 2px;
+}
+.md-live-preview h1 { font-size: 20px; }
+.md-live-preview h2 { font-size: 18px; }
+.md-live-preview h3 { font-size: 16px; }
+.md-live-preview h4 { font-size: 15px; }
+.md-live-preview h5 { font-size: 14px; }
+.md-live-preview h6 { font-size: 14px; color: var(--text-secondary); }
+.md-live-preview ul, .md-live-preview ol {
+  padding-left: 20px;
+  margin: 2px 0;
+}
+.md-live-preview li { margin: 1px 0; }
+.md-live-preview code {
+  background: var(--bg-hover);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 14px;
+}
+.md-live-preview pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 6px 0;
+  overflow-x: auto;
+}
+.md-live-preview pre code {
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.note-card-preview pre {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin: 4px 0;
+  overflow: hidden;
+  font-size: 12px;
+}
+.note-card-preview pre code {
+  background: none;
+  padding: 0;
+}
+.md-live-preview blockquote {
+  border-left: 3px solid var(--accent-color);
+  padding-left: 10px;
+  margin: 4px 0;
+  color: var(--text-secondary);
+}
+.md-live-preview hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 6px 0;
+}
+.md-preview h1, .md-preview h2, .md-preview h3,
+.md-preview h4, .md-preview h5, .md-preview h6 {
+  margin: 12px 0 6px;
+}
+.md-preview h1 { font-size: 20px; }
+.md-preview h2 { font-size: 18px; }
+.md-preview h3 { font-size: 16px; }
+.md-preview h4 { font-size: 15px; }
+.md-preview h5 { font-size: 14px; }
+.md-preview h6 { font-size: 14px; color: var(--text-secondary); }
+.md-preview code {
+  background: var(--bg-hover);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 14px;
+}
+.md-preview blockquote {
+  border-left: 3px solid var(--accent-color);
+  padding-left: 12px;
+  margin: 8px 0;
+  color: var(--text-secondary);
+}
+.md-preview hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 12px 0;
+}
+.md-preview ul, .md-preview ol {
+  padding-left: 24px;
+  margin: 4px 0;
+}
+
+/* ROW 1 of the note's bottom chrome: the collapse caret and the three tools.
+   Each tool opens a dialog; none expands in place. That keeps this chrome to
+   two rows, and it is why the editor keeps its height while a colour is
+   chosen. */
+.note-modal-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 10px;
+  border-top: 1px solid var(--border-color);
+}
+.note-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--r-pill);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.note-tool:hover { background: var(--bg-hover); color: var(--text-primary); }
+.note-tool svg { flex-shrink: 0; }
+/* Each tool shows its CURRENT value, so the dialog is for changing a setting
+   rather than for finding out what it is: the row stays a readout of what is
+   set. */
+.note-tool-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--outline);
+  flex-shrink: 0;
+}
+.note-tool-swatch.none { background: var(--bg-secondary); }
+.note-tool-count {
+  font-size: 11px;
+  line-height: 16px;
+  min-width: 16px;
+  padding: 0 5px;
+  text-align: center;
+  border-radius: var(--r-pill);
+  background: rgba(var(--accent-rgb), 0.16);
+  color: var(--accent-color);
+}
+
+.note-tool-dialog { max-width: 420px; }
+.note-tool-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ROW 2: the tools caret and four actions left, the mode/exit cluster right.
+ *
+ * `margin-left: auto` on the status cluster rather than `space-between` on the
+ * row: there are THREE children (the caret is one), and space-between
+ * would centre the action icons between the caret and the status instead of
+ * packing them to the left. On a desktop the caret is `display: none` and the
+ * result is identical to what space-between would give. */
+.note-modal-footer {
+  display: flex;
+  align-items: center;
+  padding: 8px 8px 8px 4px;
+  border-top: 1px solid var(--border-color);
+}
+.note-modal-actions {
+  display: flex;
+  gap: 2px;
+}
+.note-modal-footer .note-modal-status { margin-left: auto; }
+.note-modal-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.save-indicator {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Search bar */
+/* The positioning context for the clear button, which sits INSIDE the field's
+   right edge rather than after it. */
+.search-wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+.search-bar {
+  width: 100%;
+  padding: 10px 16px;
+  /* Room for the clear button. In the base rule rather than only the ≤600px
+     block because `SearchBar` renders the button at every width: on desktop
+     it would otherwise sit on top of the text. Unconditional rather than tied
+     to the button's presence so the text does not jump when it appears. */
+  padding-right: 40px;
+  border: none;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 16px;
+  outline: none;
+}
+.search-bar:focus {
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
+/* `type="search"` draws its own × in Blink and WebKit. Ours is the one that
+   works: the native one is absent in Firefox, unstyleable in Safari, and
+   fires no event `SearchBar` can hear — clearing through it would leave the
+   last debounced query still applied to the grid. Two ×s side by side, one of
+   them inert, would be worse than either alone. */
+.search-bar::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.search-clear {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.search-clear:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.search-clear:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
+  color: var(--text-primary);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 64px 0;
+  color: var(--text-muted);
+}
+.empty-state svg { margin-bottom: 16px; }
+.empty-state p { font-size: 14px; }
+
+/* Buttons */
+.btn-icon {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 50%;
+}
+.btn-icon svg {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-icon:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Share panel */
+.share-panel {
+  padding: 16px;
+  border-top: 1px solid var(--border-color);
+}
+.share-panel h3 {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+.share-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.share-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.share-success {
+  color: var(--success-text);
+  font-size: 13px;
+  padding: 8px 0;
+}
+.share-progress {
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 6px 0;
+}
+.share-readonly-banner {
+  background: var(--surface-container, rgba(127, 127, 127, 0.12));
+  border-left: 3px solid var(--accent-color, #1a73e8);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+/* A warning surface that follows the theme: the shared-notes-couldn't-be-
+   opened banner (BlockedShares) and the sender-key-changed alarm
+   (KeyChangeAlarms). `--warning` and `--warning-container` come from
+   theme/generated/note.css in both modes; the text stays --text-primary,
+   which reads on the amber wash in light and on the deep amber in dark. */
+/* The BORDER is `--warning-text`, the background stays `--warning-container`.
+   A 1px boundary is a graphic and answers to the 3.0 threshold; `--warning`
+   measures 2.06:1 there, so the one line that separates this notice from the
+   page would be the part of it hardest to see. The fill is unchanged — text on
+   `--warning-container` measures 15.32:1. */
+.notice-warning {
+  margin: 8px 12px;
+  border: 1px solid var(--warning-text);
+  background: var(--warning-container);
+  color: var(--text-primary);
+  border-radius: var(--r-surface);
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.notice-warning-static { margin: 0; }
+.notice-warning-code {
+  display: block;
+  margin-top: 8px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+/* E2EE keys unavailable — a persistent strip above every screen, not a toast:
+   the app stays locked until the user visits the portal, so a notice that
+   faded after five seconds would be little better than a console warning.
+   Built on .notice-warning so it follows both themes. */
+.keys-unavailable-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.keys-unavailable-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.keys-unavailable-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.keys-unavailable-unlock {
+  text-decoration: none;
+  white-space: nowrap;
+}
+.keys-unavailable-dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+  min-width: 32px;
+  min-height: 32px;
+}
+.keys-unavailable-dismiss:hover { opacity: 1; }
+@media (max-width: 600px) {
+  .keys-unavailable-notice {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+/* Notes from before a password reset. Same themed surface; the action sits on
+   its own line so the sentence never squeezes into a column beside it. */
+.locked-notes-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.locked-notes-action {
+  text-decoration: none;
+  white-space: nowrap;
+}
+.share-invite-section { margin-bottom: 12px; }
+.share-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.share-input-row input[type="email"] { flex: 1; }
+/* On a phone the three controls do not fit one row: the Invite button would
+   be pushed off the right edge to a 20px sliver at 390px (web) and 360dp
+   (Android's shell renders this same panel), leaving the panel's one action
+   unreachable. Wrap: the address takes the full width, permission and
+   Invite share the next line. */
+@media (max-width: 600px) {
+  .share-input-row { flex-wrap: wrap; }
+  .share-input-row input[type="email"] { flex: 1 1 100%; min-width: 0; }
+  .share-input-row select { flex: 1 1 auto; min-width: 0; }
+  .share-input-row .btn { flex: 0 0 auto; }
+}
+.share-input-row select {
+  padding: 8px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.upgrade-prompt {
+  text-align: center;
+  padding: 16px 0;
+}
+.upgrade-prompt svg { margin-bottom: 8px; }
+.upgrade-prompt p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+/* Secondary lines: keep specificity above `.upgrade-prompt p` so these win. */
+.upgrade-prompt .upgrade-detail {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+/* Plan-usage bars (SettingsPanel, free tier). */
+.usage-item { margin-bottom: 12px; }
+.usage-item:last-of-type { margin-bottom: 6px; }
+.usage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 5px;
+}
+.usage-label { font-size: 13px; color: var(--text-primary); }
+.usage-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.usage-bar {
+  height: 6px;
+  background: var(--bg-hover);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.usage-bar-fill {
+  height: 100%;
+  background: var(--accent-color);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.share-list { margin-top: 12px; }
+.share-list-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.share-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.share-row:last-child { border-bottom: none; }
+/* A recipient row plus whatever opens under it (the key check, the safety
+   number). The divider lives on the group: .share-row is the only child of
+   its group, so a divider on the row itself would match :last-child every
+   time and every divider would go. */
+.share-row-group { border-bottom: 1px solid var(--border-color); }
+.share-row-group:last-child { border-bottom: none; }
+.share-row-group .share-row { border-bottom: none; }
+.share-row-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.share-row-status:empty { display: none; }
+/* "New key — verify" / "Waiting — finish sharing": a state the owner must act
+   on, so it reads as a warning chip rather than a quiet link. */
+.share-key-flag {
+  font-size: 12px;
+  padding: 2px 8px;
+  margin-top: 2px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--warning-text);
+  background: var(--warning-container);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.share-key-finish {
+  border-color: var(--accent-color);
+  background: transparent;
+}
+.share-key-note { font-size: 12px; color: var(--text-muted); }
+.share-safety-link {
+  font-size: 12px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 2px;
+  color: var(--accent-color);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.share-safety-number { padding: 0 0 8px 38px; }
+.share-verify-card { margin: 4px 0 10px; }
+.share-verify-how { margin-top: 6px; }
+.share-verify-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.share-not-receiving { margin: 8px 0; }
+.share-not-receiving ul { margin: 6px 0 0 18px; padding: 0; }
+.share-security-details { margin-top: 12px; }
+/* A shared notebook somebody has stopped receiving. Always painted — unlike
+   the row's hover actions — because it is news, not a control to discover. */
+.sidebar-item-not-receiving {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0 2px;
+  color: var(--warning-text);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+.share-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.share-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  color: var(--on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+.share-person-info { display: flex; flex-direction: column; }
+.share-email { font-size: 13px; }
+/* The permission control on a recipient row. Styled to sit quietly under the
+   address, like static text — it is a correction, not a call to
+   action, so it should not shout. */
+.share-perm-select {
+  font-size: 13px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-control);
+  padding: 1px 4px;
+  margin-left: -4px;
+  cursor: pointer;
+  max-width: 100%;
+}
+.share-perm-select:hover:not(:disabled),
+.share-perm-select:focus {
+  border-color: var(--border-color, #dadce0);
+  color: var(--text-primary);
+}
+.share-perm-select:disabled { cursor: default; opacity: 0.6; }
+
+.share-perm { font-size: 11px; color: var(--text-muted); }
+
+/* Settings panel */
+.settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 200;
+}
+.settings-panel {
+  width: 100%;
+  max-width: 400px;
+  height: 100%;
+  background: var(--card-bg);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  overflow-y: auto;
+  padding: 24px;
+}
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.settings-header h2 { font-size: 20px; }
+.settings-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+/* About row — a label and its value on one line, the value in the monospace
+   face because a commit sha is read character by character and quoted back. */
+.settings-about-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+.settings-about-label {
+  color: var(--text-secondary);
+}
+.settings-about-value {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 13px;
+  color: var(--text-primary);
+  text-align: right;
+  word-break: break-word;
+}
+.settings-section h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.account-email-block { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.account-email-block label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.account-email {
+  font-size: 15px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.input-row input { flex: 1; }
+.theme-options {
+  display: flex;
+  gap: 8px;
+}
+.theme-btn {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.theme-btn.active {
+  background: var(--accent-color);
+  color: var(--on-primary);
+  border-color: var(--accent-color);
+}
+.editor-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mode-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.mode-option:hover { background: var(--bg-hover); }
+.mode-option.active {
+  border-color: var(--accent-color);
+  background: color-mix(in srgb, var(--accent-color) 8%, var(--bg-primary));
+}
+.mode-option-icon {
+  font-size: 18px;
+  min-width: 28px;
+  text-align: center;
+}
+.mode-option-name {
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 80px;
+}
+.mode-option-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.toggle-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-color);
+}
+.settings-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* Blocked-senders management (Settings) */
+.blocked-sender-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.blocked-sender-row:last-of-type {
+  border-bottom: none;
+}
+.blocked-sender-email {
+  font-size: 14px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.circle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.circle-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.circle-option:hover { background: var(--bg-hover); }
+.circle-option.selected { background: color-mix(in srgb, var(--accent-color) 10%, var(--bg-secondary)); }
+.circle-option input[type="radio"] { accent-color: var(--accent-color); }
+.circle-info { display: flex; flex-direction: column; }
+.circle-name { font-size: 14px; font-weight: 500; }
+.circle-members { font-size: 12px; color: var(--text-muted); }
+
+/* Markdown plaintext textarea */
+.md-plaintext {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 15px;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+/* Theme forcing: handled by generated note.css via .light/.dark classes */
+
+/* Attachments */
+.attachment-section {
+  padding: 4px 12px;
+  border-top: 1px solid var(--border-color);
+}
+.attachment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.upload-progress {
+  flex: 1;
+  height: 3px;
+  background: var(--bg-hover);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.upload-bar {
+  height: 100%;
+  background: var(--accent-color);
+  transition: width 0.3s;
+}
+.attachment-error {
+  font-size: 12px;
+  color: #eb5757;
+  padding: 4px 0;
+}
+.attachment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0;
+}
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+/* Attachment gallery */
+.attachment-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
+}
+.attachment-card {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+.attachment-preview-img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  display: block;
+  background: var(--bg-primary);
+  cursor: pointer;
+}
+.attachment-preview-img:hover { opacity: 0.9; }
+.attachment-preview-video {
+  width: 100%;
+  max-height: 300px;
+  display: block;
+  background: #000;
+}
+.attachment-file-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: var(--text-muted);
+}
+.attachment-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.attachment-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+}
+.attachment-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+}
+.attachment-size {
+  color: var(--text-muted);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.attachment-card-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.attachment-action {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+}
+.attachment-action:hover { color: var(--text-primary); background: var(--bg-hover); }
+.attachment-action-danger:hover { color: #eb5757; }
+/* A file that couldn't be confirmed: the themed warning surface, inside
+   the card under its name, with Keep / Delete. */
+.attachment-unconfirmed {
+  margin: 0 10px 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+.attachment-unconfirmed-title { font-weight: 600; margin-bottom: 2px; }
+.attachment-unconfirmed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.attachment-add-btn { position: relative; }
+.attachment-plus {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-color);
+  line-height: 1;
+}
+
+/* Attachment badge on card */
+.note-card-attachment-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Shared indicator on a note card. Deliberately uses the accent colour rather
+   than the muted grey the attachment badge uses: "someone else can read this"
+   is worth noticing, and it is the same colour the lit share button uses in
+   the editor so the two read as the same fact. */
+.note-card-shared-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--accent-color);
+  font-size: 13px;
+  min-width: 0;
+}
+
+
+
+
+
+/* Written offline, waiting on the replay queue. Deliberately muted rather than
+   an error colour — nothing has gone wrong, the note simply hasn't left the
+   device yet. */
+.note-card-pending-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Share button in the editor toolbar, when the note IS shared. */
+.card-action.is-shared {
+  color: var(--accent-color);
+  background: color-mix(in srgb, var(--accent-color) 15%, transparent);
+}
+
+/* Label editor */
+.label-editor { position: relative; }
+/* Attach, on a DRAFT. Sits with the colour and notebook controls because it is
+   the same kind of thing — something you set about the note — even though it
+   has to save first to do it. */
+.composer-attach {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--r-pill);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.composer-attach:hover { background: var(--bg-hover); color: var(--text-primary); }
+.composer-attach-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 6px 0 0;
+}
+
+/* The account's existing labels, offered as one-tap chips. Sits under both
+   label inputs — the modal's LabelEditor and the composer's own copy — because
+   neither could show you a label you had not already started typing. */
+.label-palette {
+  margin-top: 10px;
+}
+.label-palette-title {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.label-palette-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.label-palette-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-color);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+/* Deliberately quieter than the label itself: the affordance should be
+   readable without competing with the word you are actually scanning for. */
+.label-palette-plus {
+  color: var(--text-muted);
+  font-weight: 600;
+  line-height: 1;
+}
+.label-palette-chip:hover .label-palette-plus { color: var(--accent-color); }
+.label-palette-chip:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.label-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 0;
+}
+.label-chip.editable {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px 2px 8px;
+}
+.label-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  line-height: 1;
+}
+.label-remove:hover { color: var(--text-primary); }
+/* 16px for the iOS zoom threshold (see `.form-group input`) — a smaller font
+   would zoom the page when a label is added from inside the editor, leaving
+   the user panned into a corner of their own note. This is the text FIELD,
+   not a label chip: the deliberate 16-vs-13 press-vs-read contrast is
+   between `.filter-chip` and `.label-chip`. */
+.label-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 16px;
+  min-width: 80px;
+  flex: 1;
+  padding: 4px 0;
+}
+.label-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: var(--shadow-hover);
+  z-index: 10;
+  overflow: hidden;
+}
+.label-suggestion {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.label-suggestion:hover { background: var(--bg-hover); }
+
+/* Color picker */
+.color-picker {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+.color-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s;
+}
+.color-dot:hover { transform: scale(1.15); }
+.color-dot.selected { border-color: var(--text-primary); }
+
+/* Note modal meta section */
+.notebook-select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.notebook-select-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+/* 16px: the iOS zoom threshold again, and 15 was off the type scale. */
+.notebook-select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 16px;
+  width: 30ch;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+
+/* Label filter bar */
+/* One filter row above the grid — All, the four built-in filters as icons,
+   then the user's labels; see components/FilterBar.tsx. */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--r-pill);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+/* Icon-only chips are square-ish so four of them cost roughly one text chip,
+   which is the whole point — the user's labels have to stay in view. The
+   padding widens again once a label appears beside the glyph. */
+.filter-chip.icon {
+  padding: 4px 8px;
+}
+.filter-chip.icon.active {
+  padding: 4px 12px;
+}
+.filter-chip.active {
+  background: var(--accent-color);
+  color: var(--on-primary);
+  border-color: var(--accent-color);
+}
+.filter-chip:hover:not(.active) { background: var(--bg-hover); }
+/* A label that would leave no notes: still a button (the empty grid says why,
+   and offers the step back), so it is said quietly, not switched off. */
+.filter-chip.dim {
+  background: transparent;
+  border-style: dashed;
+  color: var(--text-muted);
+}
+/* How many notes the chip would leave. Smaller than the name it follows, so a
+   row of labels still reads as names first. Smaller is the ONLY difference:
+   it keeps the chip's own text colour. Dimmed to 0.75 it would measure 3.2:1
+   on a grey chip and 3.6:1 on a plain one (light theme), under the 4.5:1 a
+   number someone has to read needs; undimmed it is the name's 5.4:1 to 6.4:1. */
+.filter-chip-count {
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}
+/* On a desktop window the filter row reads small — the phone shells render
+   this same UI at a ~411px viewport, which magnifies it. +30% above the
+   drawer breakpoint: text 12 -> 16px, glyphs 16 -> 21px (the CSS size wins
+   over the svg width/height attributes). Phones keep the compact row. */
+@media (min-width: 601px) {
+  /* The `.filter-bar` prefix says which component a rule is for, and keeps
+     this bump off any other UI that uses a bare `.filter-chip`. */
+  /* line-height matches the glyph height so text chips (All, the user's
+     labels) and icon chips fill identical pills. */
+  .filter-bar .filter-chip { font-size: 16px; line-height: 20px; }
+  .filter-bar .filter-chip svg { width: 20px; height: 20px; }
+}
+.filter-chip svg { display: block; }
+
+/* Keep body layout */
+.keep-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  /* Anchor for the phone sidebar overlay below. */
+  position: relative;
+}
+.keep-body .keep-main { flex: 1; }
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  overflow-y: auto;
+  flex-shrink: 0;
+  padding: 8px 0;
+}
+
+/* The sidebar is a DRAWER below 1024px, not a second column.
+ *
+ * ⚠️ Not only on phones: the band that needs it most is the one just above
+ * 600px. Between 601 and 1023 an in-flow 240px column comes straight out of
+ * the grid. Measured at 1023: CLOSED 3 cards x 319.7px, OPEN 2 x 367.5 — a
+ * whole column of notes traded for navigation, on a screen with no room to
+ * spare. 1024 is where the fourth/third column survives the push, so that is
+ * where the drawer stops overlaying and starts sharing the row.
+ *
+ * `max-width: 1023px` rather than `max-width: 1024px`: the measurement is that
+ * 1024 is the first width that can afford the push.
+ *
+ * `.keep-body` is `position: relative` (see its rule) so this anchors under
+ * the header rather than over it. */
+@media (max-width: 1023px) {
+  .sidebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 60;
+    width: min(280px, 80vw);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+    /* An ANIMATION, not a transition. `NotesView.tsx` wraps <Sidebar> in a
+       `<Show>`, so the element MOUNTS — there is no previous computed value
+       for a transition to run from, and the drawer would complete in a
+       single frame. An entry animation is the only thing that can animate an
+       element that did not exist a frame ago. */
+    animation: sidebar-slide-in 150ms ease-out;
+  }
+}
+@keyframes sidebar-slide-in {
+  from { transform: translateX(-100%); }
+  to { transform: none; }
+}
+/* Somebody who has asked the OS for less motion gets the drawer immediately.
+   The slide is an orientation aid, not information. */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { animation: none; }
+}
+.sidebar-section { padding: 4px 0; }
+.sidebar-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+/* "New notebook". A bare "+" glyph with no container (17.3 x 16) would be
+   the smallest target in the app, under even WCAG 2.5.8's 24x24 minimum, and
+   this is the sidebar's control for creating a notebook — the entry point to
+   notebooks, which are also the unit sharing is built on.
+   32x32 circle with a hover fill, copying `.selection-bar-close`, which is the
+   same shape of control and already on the 16-glyph-in-32-box tier. The
+   negative margins hold the section header's rhythm: 9px of the growth is
+   taken back off the top, where the header's own 8px padding plus the
+   section's 4px leaves room, and 4px off the bottom, which is exactly the
+   header's padding-bottom — no more, or the target would bleed into the top
+   edge of the first notebook row underneath it. */
+.sidebar-add-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  margin: -9px -8px -4px 0;
+}
+.sidebar-add-btn:hover { color: var(--accent-color); background: var(--bg-hover); }
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-primary);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  border-radius: 0 24px 24px 0;
+  position: relative;
+}
+/* Leading icon on a sidebar row — labels, notebooks and the nav items.
+   The `>` matters: it sizes only the row's own icon and leaves the smaller
+   rename/delete icons inside .sidebar-item-actions alone. A CSS width/height
+   overrides the SVG's width/height presentation attributes, so this works
+   without touching every inline svg. `flex-shrink` stops a long label name
+   squashing the icon instead of ellipsising itself. */
+.sidebar-item > svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.sidebar-item:hover { background: var(--bg-hover); }
+.sidebar-item.active {
+  background: color-mix(in srgb, var(--accent-color) 15%, var(--bg-secondary));
+  color: var(--accent-color);
+  font-weight: 500;
+}
+.sidebar-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* THE NAME GETS THE WHOLE ROW. No `min-width` reserving room for the
+   hover-revealed action strip: that would cut a notebook name short with an
+   ellipsis to make space for three icons that are not on screen. The row
+   sizes to what is ACTUALLY painted at rest — the count and the shared
+   marker — and the strip, which is absolutely positioned, simply lies over
+   the end of the name when it appears (see `.sidebar-item-actions`), so
+   nothing about the row's layout changes on hover. */
+.sidebar-item-right {
+  display: flex;
+  align-items: center;
+  /* `stretch` so the absolutely-positioned action strip, which anchors to this
+     box, spans the row's CONTENT box with top/bottom 0 — the same box the name
+     is laid out in, so the cover is exactly as tall as the text it hides.
+     (Not the row's 36px: that includes 8px of padding, which holds nothing.)
+     Its own content stays centred, so nothing visible moves. Without it the
+     strip is only as tall as the count, and the name's ascenders and
+     descenders show above and below the cover. */
+  align-self: stretch;
+  position: relative;
+  min-width: 0;
+  justify-content: flex-end;
+}
+/* The strip is 76px (3 x 24px buttons + 2 x 2px gaps) and is right-aligned to
+   the row, so it lies over the tail of the name. It paints the row's own
+   background to cover what is underneath — see `.sidebar-item-actions`.
+   ⚠️ Not a mask on the name: the icons begin about 69px before the name's
+   right edge, so a gradient that is only fully transparent AT that edge still
+   leaves readable text under the first icon, and one made opaque early enough
+   to avoid that hides more of the name than the icons ever cover. Covering is
+   both crisper and cheaper. */
+.sidebar-item-unread {
+  background: var(--accent-color, #1a73e8);
+  color: white !important;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-weight: 600;
+  min-width: 18px;
+  text-align: center;
+}
+.sidebar-item-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: opacity 0.15s;
+}
+/* Another site of the hidden-but-interactive pattern (see `.note-card-actions`).
+   `pointer-events: none` alone makes this strip inert to the pointer but
+   leaves all three buttons in the TAB ORDER at opacity 0 — a tab walk with
+   the drawer open would reach "Share notebook / Rename / Delete" as unlit
+   stops, per row. `visibility: hidden` takes them out of the tab order and
+   the a11y tree as well, and `:focus-within` hands them back when the row
+   itself is focused. */
+.sidebar-item-actions {
+  display: flex;
+  gap: 2px;
+  position: absolute;
+  right: 0;
+  /* Full row height, and the row's own background, so this COVERS the end of
+     the name instead of being drawn on top of legible text. The name keeps its
+     full width at rest and is only hidden for as long as the icons are
+     actually there, which is the point. `padding-left` keeps a letter from
+     butting against the first icon.
+     The colour is stated twice, here and for `.active` below, because a
+     hovered row and a selected row do not share one. `background: inherit`
+     cannot do it: this strip's parent is `.sidebar-item-right`, which is
+     transparent — the colour lives two levels up, on `.sidebar-item`. */
+  top: 0;
+  bottom: 0;
+  align-items: center;
+  padding-left: 8px;
+  background: var(--bg-hover);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s, visibility 0s 0.15s;
+}
+/* A selected row keeps its accent tint when hovered: `.sidebar-item.active` and
+   `.sidebar-item:hover` have equal specificity and `.active` is written later,
+   so it wins. The strip has to follow it or it paints a grey patch on a blue
+   row. */
+.sidebar-item.active .sidebar-item-actions {
+  background: color-mix(in srgb, var(--accent-color) 15%, var(--bg-secondary));
+}
+.sidebar-item:hover .sidebar-item-actions,
+.sidebar-item:focus-within .sidebar-item-actions {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.15s, visibility 0s;
+}
+.sidebar-item:hover .sidebar-item-count,
+.sidebar-item:focus-within .sidebar-item-count { opacity: 0; }
+
+/* "This notebook is shared by you" — state, not a control. Sharing a notebook
+   grants standing access to every note in it INCLUDING ones added later, and
+   the share button lives in the hover-revealed action strip, so a resting row
+   says so here.
+   Fades with the count on hover for the same reason the count does: the
+   absolutely-positioned action strip lands on this exact spot. */
+.sidebar-item-shared {
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent-color);
+  opacity: .8;
+  transition: opacity 0.15s;
+}
+.sidebar-item:hover .sidebar-item-shared { opacity: 0; }
+/* Touch has no hover, so a hover-reveal here is a control that does not exist.
+   At opacity:0 AND pointer-events:none, a first tap would only apply sticky
+   :hover — the icons appear and nothing fires — so sharing a notebook from a
+   phone would be an invisible two-tap gesture with no affordance for the first
+   tap. Unlike the note card's action strip (display:none in the hover:none
+   block further down), a notebook row has no other home for these: there is
+   no long-press menu and no selection bar to move them to. So they are
+   PAINTED on touch rather than removed.
+   `position: static` puts them back in flow beside the count instead of
+   absolutely on top of it, and the count stops hiding itself, so the row shows
+   its note count and its actions at once. Deliberately not nested inside the
+   600px block — a touch tablet has no hover either.
+   `visibility: visible` below is restated for the same reason the opacity is:
+   the base rule hides this strip with `visibility` (which keeps it out of the
+   tab order), and `opacity: 1` alone would lay out a painted-on-touch strip
+   that is still invisible. */
+@media (hover: none) {
+  /* In FLOW here, so the strip covers nothing and a background would just be a
+     grey patch beside the count. */
+  .sidebar-item-actions {
+    position: static; visibility: visible; opacity: 1; pointer-events: auto;
+    background: none; padding-left: 0;
+  }
+  .sidebar-item.active .sidebar-item-actions { background: none; }
+  .sidebar-item:hover .sidebar-item-count { opacity: 1; }
+  /* Nothing overlays the row on touch, so the shared marker has no reason to
+     hide — and sticky :hover after a tap would otherwise erase it. */
+  .sidebar-item:hover .sidebar-item-shared { opacity: .8; }
+  .sidebar-item-right { gap: 4px; }
+}
+.sidebar-action {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar-action:hover { color: var(--text-primary); background: var(--bg-hover); }
+/* The accept/decline prompt under a pending shared notebook. Indented under
+   its row and using the same tokens as the rest of the sidebar, so it reads as
+   part of the entry it belongs to rather than a dialog that landed on top. */
+.notebook-invite {
+  margin: 2px 16px 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #dadce0);
+  border-radius: 8px;
+  background: var(--bg-primary);
+}
+.notebook-invite-text {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+.notebook-invite-warning {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--danger-color, #d93025);
+}
+.notebook-invite-actions {
+  display: flex;
+  gap: 8px;
+}
+.notebook-invite-actions button {
+  flex: 1;
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.notebook-invite-actions button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.sidebar-rename {
+  padding: 4px 16px;
+}
+/* 16px: the iOS zoom threshold (see `.form-group input`). Naming or renaming a
+   notebook is a phone-first action — the drawer is where notebooks are made. */
+.sidebar-rename input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--accent-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 16px;
+  outline: none;
+}
+
+
+/* Per-card select checkbox (appears on hover, persists when selected).
+   Placed in the top-right corner so it doesn't occlude the title or
+   the first line of preview text — most titles are short enough that
+   the circle doesn't visually fight them over there. */
+.note-card-select {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  /* Same hidden-but-interactive pattern as `.note-card-actions` above, and the
+     same treatment. It matters even more here: a tab walk reaches "Select note"
+     BEFORE Delete, and a stray Enter on it at opacity 0 would silently put the
+     whole app into selection mode — the composer and notebook indicator vanish
+     with nothing on screen explaining why. */
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 120ms, visibility 0s 120ms, color 120ms;
+  z-index: 3;
+}
+.note-card:hover .note-card-select,
+.note-card:focus-within .note-card-select,
+.note-card.selecting .note-card-select,
+.note-card.selected .note-card-select {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 120ms, visibility 0s, color 120ms;
+}
+.note-card-select:hover {
+  color: var(--accent-color);
+}
+.note-card.selected .note-card-select {
+  color: var(--accent-color);
+}
+.note-card.selected {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -2px;
+}
+/* The card's one real control (NoteCard.tsx): the tab stop, and the button a
+   screen reader announces and activates. The card itself is a plain
+   container — as `role="button"` it would put every control on it INSIDE a
+   button (axe `nested-interactive`) — and this is one of its controls.
+
+   It covers the card so focus scrolls the whole card into view and a screen
+   reader's cursor outlines the card, but it takes NO pointer events: a click
+   or tap lands on whatever is drawn there — preview text, a link, a badge with
+   a tooltip — and reaches the card's own handlers (open, drag, long-press,
+   Ctrl/⌘-click). Keyboard activation targets the focused element, not a
+   point, so it still reaches the button (in Chromium 145 and Firefox 146
+   alike); an activation that did hit-test would land on the card's content
+   and bubble to the same handler.
+
+   Its own outline is off because the ring is drawn on the card, below: the
+   card's `overflow: hidden` would clip a ring drawn out here. */
+.note-card-open {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  appearance: none;
+  pointer-events: none;
+  outline: none;
+}
+/* Without the focus ring nothing would paint the card when it takes focus,
+   so tabbing through the grid would move an invisible cursor. Hiding the
+   strip's six unlit stops per card is only an improvement if the stop that
+   replaces them is visible.
+   `outline`, not `border`: an outline is drawn outside the border box and
+   takes no layout, so a focused card does not nudge its neighbours. Offset
+   OUTWARD (+2) where the selected state offsets inward (−2). An element has
+   one outline, so on a card that is both selected and focused this ring
+   REPLACES the selected one until focus leaves; the `:has()` makes it the
+   more specific rule anyway.
+   Keyed on the open button's `:focus-visible`, not the card's `:focus-within`,
+   so tabbing on to Select or Delete moves the visible cursor off the card. */
+.note-card:has(> .note-card-open:focus-visible) {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+/* When any cards are selected, non-selected cards dim slightly */
+.note-card.selecting:not(.selected) {
+  opacity: 0.72;
+}
+
+/* Selection bar — replaces composer while in selection mode. Sticky: a
+   selection started three screens down still gets its actions pinned to
+   the top of the notes area instead of stranded at scroll offset zero. */
+.selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-container);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 6px 10px;
+  /* Matches .notebook-indicator's margin — the bar stands in for that
+     line, so the tabs row must not jump when the swap happens. */
+  margin-bottom: 4px;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+.selection-bar-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.selection-bar-close:hover {
+  background: var(--bg-hover);
+}
+.selection-bar-count {
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: 4px;
+  color: var(--text-primary);
+}
+.selection-bar-spacer {
+  flex: 1;
+}
+.selection-bar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.selection-bar-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--accent-color);
+}
+.selection-bar-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+/* Ink, so `--error-text`. Like `.card-action-danger:hover`, this one would
+   clear the 3.0 graphics threshold at 4.23:1 with `--error` too; it uses the
+   ink token for uniformity. */
+.selection-bar-btn.selection-bar-btn-danger:hover:not(:disabled) {
+  color: var(--error-text);
+}
+.selection-bar-menu-wrap {
+  position: relative;
+}
+.selection-bar-popover {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  background: var(--surface-container);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  padding: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  z-index: 20;
+  max-width: 220px;
+}
+.selection-bar-popover-wide {
+  max-width: 280px;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+/* Notebook picker uses a vertical column list rather than the row
+ *  layout the label popover uses. */
+.selection-bar-popover-list {
+  max-width: 260px;
+  min-width: 180px;
+  max-height: 300px;
+  overflow-y: auto;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+.selection-bar-notebook-item {
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text-primary);
+}
+.selection-bar-notebook-item:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+.selection-bar-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 4px 8px;
+}
+.selection-bar-color {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--outline);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+.selection-bar-color:hover {
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+.selection-bar-color-none {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.selection-bar-label-input {
+  flex: 1;
+  /* min-width 0 overrides the flex default (min-content), which would let the
+     input's intrinsic width push itself and the Add button past the popover fill. */
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font: inherit;
+}
+.selection-bar-popover-wide .btn {
+  flex-shrink: 0;
+}
+
+/* Collab connection indicator in the modal header */
+.note-modal-collab-status {
+  position: absolute;
+  top: 10px;
+  right: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--bg-hover);
+  z-index: 4;
+  user-select: none;
+}
+.collab-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-muted) 20%, transparent);
+  animation: collab-pulse 2s ease-in-out infinite;
+}
+.collab-dot.connected {
+  background: var(--success, #10b981);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--success, #10b981) 25%, transparent);
+  animation: none;
+}
+@keyframes collab-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* Remote cursors from y-codemirror.next. The extension sets the
+ * --ySelection-color CSS variable per-user based on awareness state. */
+.cm-ySelection,
+.cm-yLineSelection {
+  background-color: var(--ySelection-color, rgba(250, 129, 0, 0.3));
+}
+.cm-ySelectionCaret {
+  position: relative;
+  border-left: 2px solid var(--ySelection-color, #fa8100);
+  border-right: 2px solid var(--ySelection-color, #fa8100);
+  margin-left: -1px;
+  margin-right: -1px;
+  box-sizing: border-box;
+  display: inline;
+}
+/* Collaborator badge on a remote caret.
+ *
+ * SPECIFICITY IS LOAD-BEARING — every rule here is `.cm-editor .cm-yX`, not
+ * `.cm-yX`. y-codemirror.next ships its own `.cm-ySelectionInfo { opacity: 0 }`
+ * base theme, and CodeMirror mounts it through style-mod into
+ * `document.adoptedStyleSheets`, which the CSSOM orders AFTER the document's
+ * own stylesheets. So a single-class rule in this file LOSES to the library at
+ * equal specificity no matter where it sits in the file, and the badge stays
+ * invisible at opacity 0. Two classes beats one, and order stops mattering.
+ *
+ * Colour comes from `inherit`, not from `--ySelection-color`: nothing ever
+ * defines that variable (the library sets an inline `background-color` on the
+ * caret span instead), so a rule keyed on it silently falls back to the same
+ * orange for every user. Inheriting picks up that inline per-user colour,
+ * which is what the library's own dot does. */
+.cm-editor .cm-ySelectionCaretDot {
+  /* Hidden in favour of the initial badge below (the dot only said
+   * "someone is here").
+   */
+  display: none;
+}
+
+/* Backstop for the badge's `background-color: inherit`.
+ *
+ * y-codemirror.next sets the per-user colour as an INLINE background on this
+ * span, and the dot/badge inherit it — that inline style wins here whenever a
+ * real colour exists. But a peer publishing an empty or malformed colour makes
+ * the browser drop the inline declaration, and then `inherit` resolves to
+ * transparent and the avatar disappears into the note. This guarantees there
+ * is always something to inherit. */
+.cm-editor .cm-ySelectionCaret {
+  background-color: var(--accent-color);
+}
+
+/* Circular collaborator avatar at the caret's top-RIGHT — same shape and
+ * treatment as a Track circle member icon: filled with that user's colour,
+ * white initial, centred, ringed against the page so it reads over text.
+ *
+ * It shows a single letter because CollabSession publishes the INITIAL as
+ * `user.name` (see lib/collab.ts). Deriving it there rather than clipping the
+ * name here is what allows plain flex centring: a CSS-only version needs
+ * `font-size: 0` + `::first-letter`, which forbids `display: flex` and
+ * collapses every `em` on the element.
+ *
+ * A name label hidden at `opacity: 0` until hover would leave a remote cursor
+ * an unlabelled stripe, so you could not tell who is typing. */
+.cm-editor .cm-ySelectionInfo {
+  position: absolute;
+  /* px, not em — the offset is tuned to the badge. */
+  top: -14px;
+  left: 100%;
+  margin-left: 2px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background-color: inherit;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+  user-select: none;
+  z-index: 101;
+  opacity: 1;
+  transition: none;
+  pointer-events: none;
+  /* Contains a peer that publishes a full name (an older client)
+     rather than letting it blow the circle out into a label. */
+  overflow: hidden;
+  white-space: nowrap;
+  box-shadow: 0 0 0 2px var(--card-bg, #fff);
+}
+
+/* The library reveals the full name on hover by raising opacity; keep the
+   badge fixed instead so it never expands into a name on mouseover. */
+.cm-editor .cm-ySelectionCaret:hover > .cm-ySelectionInfo {
+  opacity: 1;
+}
+
+/* Co-edit banner — "X is editing this note" */
+.note-modal-coedit-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 0 0 8px;
+  background: color-mix(in srgb, var(--warning) 15%, var(--surface-container));
+  border: 1px solid var(--warning);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+/* `--warning-text`. The icon is the banner's only non-text signal, so the 3.0
+   graphics threshold applies to it and `--warning` measured 1.91:1 against
+   this banner's own 15% wash. `--warning-text` is 4.85:1 on the worst light
+   surface. The wash and border above stay `--warning`: those are fills. */
+.note-modal-coedit-banner svg {
+  flex-shrink: 0;
+  color: var(--warning-text);
+}
+
+/* Modal maximize toggle.
+   IN THE TITLE ROW, NOT OVER IT. Absolutely positioned at the top right, a
+   32x32 button would sit on top of whatever the modal's first row happened
+   to be — and that row is `.note-titlebar`, whose right end holds the save
+   state: the button would cover nearly all of the indicator, and
+   `elementFromPoint` at the centre of the word "Saved" would return the
+   button's own svg. As a flex item it reserves its own room, and it cannot
+   sit over the colour bar or the co-edit banner either. (On a phone the
+   modal is already fullscreen, so the toggle is `display: none` there.) */
+.note-modal {
+  position: relative;
+}
+.note-modal-maximize {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms, color 120ms;
+}
+.note-modal-maximize:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+/* Maximized state: fill the viewport. The overlay's padding is removed so
+   the modal sits edge-to-edge; inner max-heights are overridden. */
+.note-modal-overlay:has(.note-modal-maximized) {
+  padding: 0;
+}
+.note-modal.note-modal-maximized {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+}
+
+
+/* Reminder chip on note cards */
+.reminder-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  margin-top: 6px;
+  margin-right: 4px;
+  border-radius: 10px;
+  background: var(--bg-chip, rgba(0, 0, 0, 0.06));
+  color: var(--text-muted, #5f6368);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.reminder-chip-past {
+  color: #c5221f;
+  background: rgba(197, 34, 31, 0.1);
+}
+.reminder-chip svg {
+  flex-shrink: 0;
+}
+:root.dark .reminder-chip {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Reminder button active state in modal toolbar */
+.card-action-active {
+  color: var(--accent-color, #1a73e8);
+}
+:root.dark .card-action-active {
+  color: #8ab4f8;
+}
+
+/* Reminder picker popover */
+.reminder-picker {
+  position: absolute;
+  right: 16px;
+  bottom: 64px;
+  min-width: 240px;
+  max-width: 280px;
+  background: var(--surface-container);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  padding: 8px 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+}
+
+.reminder-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 16px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.reminder-picker-current {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+}
+
+.reminder-preset {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 10px 16px;
+  font: inherit;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.reminder-preset:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+.reminder-preset:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.reminder-preset-label {
+  font-size: 14px;
+}
+.reminder-preset-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+/* `--error-text`, not `--error`. The rule is: `--error` is a FILL, `--error-text`
+   is INK. Measured on `surface-hover #e8e8ec`, the light surface this app paints
+   on that fails first: `--error` as ink is 3.46:1, under the 4.5:1 AA needs for
+   text; `--error-text` is 5.38:1. Both tokens carry the same value in dark, so no
+   caller branches on theme. */
+.reminder-preset-danger {
+  color: var(--error-text);
+  border-top: 1px solid var(--border-color);
+  margin-top: 4px;
+}
+
+/* On a phone the popover's fixed 280px max and right-anchored position
+   would put its Set button past the viewport edge and over the colour
+   swatches (390px web, 360dp Android shell). Span the editor's width
+   instead and let the custom row wrap so Set is always on screen. */
+@media (max-width: 600px) {
+  .reminder-picker {
+    left: 12px;
+    right: 12px;
+    max-width: none;
+    min-width: 0;
+  }
+  .reminder-custom { flex-wrap: wrap; }
+  .reminder-custom input[type="datetime-local"] { flex: 1 1 180px; min-width: 0; }
+  .reminder-custom .btn { flex: 0 0 auto; margin-left: auto; }
+}
+.reminder-custom {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  align-items: center;
+}
+.reminder-custom input[type="datetime-local"] {
+  flex: 1;
+  padding: 4px 6px;
+  font: inherit;
+  color: var(--text-primary);
+  background: var(--surface-container);
+  border: 1px solid var(--outline);
+  border-radius: 4px;
+}
+
+/* Ink, so `--error-text` (see `.reminder-preset-danger`). This one is 12px,
+   which makes the contrast floor matter more, not less. */
+.reminder-error {
+  padding: 8px 16px;
+  color: var(--error-text);
+  font-size: 12px;
+}
+
+/* Composer quick actions (inline icons on the collapsed placeholder) */
+.composer-collapsed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.composer-placeholder {
+  flex: 1;
+  cursor: text;
+}
+.composer-quick-actions {
+  display: flex;
+  gap: 4px;
+}
+.composer-quick-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+.composer-quick-btn svg {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #5f6368);
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.composer-quick-btn:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.08));
+  color: var(--accent-color, #1a73e8);
+}
+:root.dark .composer-quick-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ChecklistNoteEditor */
+.checklist-editor {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+.checklist-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.checklist-row:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.03));
+}
+:root.dark .checklist-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+/* Lifted "card" look while dragging — matches the Android elevation feel.
+   The grabbed row floats above its neighbours (z-index set inline) with a
+   solid background + shadow so it reads as picked-up rather than faded. */
+.checklist-row.dragging {
+  background: var(--card-bg, #fff);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  border-radius: 8px;
+  cursor: grabbing;
+}
+:root.dark .checklist-row.dragging {
+  background: var(--surface-container-high, #2a2a32);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+}
+.checklist-drag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 28px;
+  margin-left: -4px;
+  color: var(--text-secondary, #5f6368);
+  cursor: grab;
+  /* Always visible: a hover-only handle would be invisible on touch. */
+  opacity: 0.55;
+  transition: opacity 120ms;
+  flex-shrink: 0;
+  touch-action: none; /* the handle owns the gesture; don't scroll the page */
+}
+.checklist-row:hover .checklist-drag {
+  opacity: 0.9;
+}
+.checklist-drag:active {
+  cursor: grabbing;
+}
+.checklist-drag-disabled {
+  cursor: default;
+  opacity: 0 !important;
+}
+/* `.checklist-checkbox-hit` is the `<label>` around the input — it is the
+   TOUCH TARGET, the input is only the ink. See the phone block for why the
+   split exists at all (an `appearance: auto` checkbox discards padding and
+   border, so a box bigger than its tick is not reachable from CSS).
+   At desktop density this wrapper is deliberately sizeless: it shrink-wraps
+   the same 16px input with the same 7px top margin, so the rows render as if
+   the label were not there. */
+.checklist-checkbox-hit {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.checklist-checkbox {
+  margin-top: 7px;
+  flex-shrink: 0;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-color, #1a73e8);
+}
+.checklist-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  resize: none;
+  outline: none;
+  font: inherit;
+  color: inherit;
+  padding: 4px 0;
+  line-height: 1.4;
+  overflow: hidden;
+}
+.checklist-input::placeholder {
+  color: var(--text-muted, #9aa0a6);
+}
+.checklist-input-checked {
+  text-decoration: line-through;
+  color: var(--text-muted, #5f6368);
+}
+/* Another site of the same hidden-but-interactive pattern as
+ * `.note-card-actions` and `.note-card-select`. Without this rule the button
+ * is at `opacity: 0` yet still `pointer-events: auto`, so `elementFromPoint`
+ * at its centre returns the button — a 24px unconfirmed destructive control at
+ * the right edge of every checklist row, exactly where a thumb reaching for
+ * the end of the text lands. `removeRow` is called directly, with no confirm.
+ *
+ * `visibility: hidden` rather than the `display: none` used for the card strip
+ * on touch, deliberately: a checklist row has no other delete — no swipe
+ * gesture, no long-press menu — so removing it on touch would remove the
+ * function. Hidden-and-inert kills the accidental tap; the `:focus-within`
+ * reveal below gives it back on purpose, because tapping the row's text field
+ * focuses the row. Accidental taps land on text; a deliberate delete is
+ * two taps. */
+.checklist-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted, #5f6368);
+  padding: 4px;
+  border-radius: 50%;
+  cursor: pointer;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 120ms, visibility 0s 120ms;
+  flex-shrink: 0;
+}
+.checklist-row:hover .checklist-delete,
+.checklist-row:focus-within .checklist-delete {
+  visibility: visible;
+  opacity: 0.7;
+  transition: opacity 120ms, visibility 0s;
+}
+.checklist-delete:hover {
+  opacity: 1;
+  background: var(--bg-hover, rgba(0, 0, 0, 0.08));
+}
+
+.checklist-add-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 34px;
+  cursor: text;
+  color: var(--text-muted, #5f6368);
+  border-radius: 4px;
+}
+.checklist-add-row:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.03));
+}
+:root.dark .checklist-add-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.checklist-add-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+}
+.checklist-add-label {
+  font-size: 14px;
+}
+
+.checklist-completed {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+}
+.checklist-completed-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-muted, #5f6368);
+  font: inherit;
+  border-radius: 4px;
+}
+.checklist-completed-header:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.03));
+}
+.checklist-chevron {
+  display: inline-flex;
+  transition: transform 150ms;
+}
+.checklist-chevron.open {
+  transform: rotate(180deg);
+}
+.checklist-completed-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 2px 8px 6px 34px;
+  font-size: 12px;
+  color: var(--text-muted, #5f6368);
+}
+.checklist-linkbtn {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.checklist-linkbtn:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.05));
+  color: var(--accent-color, #1a73e8);
+}
+.checklist-sep {
+  opacity: 0.4;
+}
+
+/* NoteCard checklist preview */
+.note-card-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+}
+.note-card-checklist-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+}
+.note-card-checklist-box {
+  flex-shrink: 0;
+  color: var(--text-muted, #5f6368);
+  margin-top: 3px;
+}
+.note-card-checklist-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.note-card-checklist-more,
+.note-card-checklist-completed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-muted, #5f6368);
+}
+
+/* Touch: the card's hover-revealed controls do not exist.
+ *
+ * ⚠️ TOP-LEVEL ON PURPOSE. Nested inside
+ * `@media (max-width: 600px) { @media (hover: none) { … } }` these rules would
+ * be a WIDTH test wrapped around a HOVER question, and would stop at 600px:
+ * with touch emulation at 768x1024 the strip would stay
+ * `{"display":"flex","opacity":"0","h":40,"pointerEvents":"auto"}`, and
+ * tapping the invisible Archive at the drawn centre of a real card would
+ * ARCHIVE the note instead of opening it. That is every iPad in portrait,
+ * every Android tablet, every unfolded foldable and every phone in landscape.
+ *
+ * Hover is not a width. Anything that answers "can this user hover?" belongs
+ * out here; only genuinely phone-sized chrome belongs in the 600px block.
+ *
+ * Placed after every base declaration it overrides (`.note-card-actions`,
+ * `.note-card-select`) so the single-class ties resolve this way. */
+@media (hover: none) {
+  /* Tap opens the note, full stop. The icons only make sense as a hover
+     reveal; on touch they would appear AFTER the tap and do nothing useful.
+     Long-press selects; selected/selecting states still show the circle. */
+  .note-card:hover .note-card-select { visibility: hidden; opacity: 0; }
+  /* The per-card action strip does not exist on touch. Every bulk action
+     lives in the top selection bar (long-press → select) — including
+     restore/delete-forever in Trash, which the bar offers — so the
+     strip is display:none outright: opacity:0 would leave it invisible but
+     tappable (taps meant to select would archive), and pointer-events:
+     none would still let sticky :hover flash a dead row into view after a
+     tap. */
+  .note-card-actions { display: none; }
+  /* `display: none`, not `pointer-events: none`. Inert would be right for the
+     pointer — a tap here falls through to the card and opens the note, which
+     is the intended touch behaviour — but the button would stay in the
+     ACCESSIBILITY tree, so TalkBack would offer "Select note" on every card
+     and activating it would do nothing. Removing it from the tree makes the
+     offer match the behaviour: on touch you open with a tap and select with
+     a long press. */
+  .note-card-select { display: none; }
+  /* `visibility: visible` restated: the base rule hides with `visibility`,
+     and `display: inline-flex` alone would lay out an invisible circle. */
+  .note-card.selecting .note-card-select,
+  .note-card.selected .note-card-select {
+    display: inline-flex;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .note-card {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Compose moves to a floating action button, bottom-right: a 56px FAB at
+     right:16 bottom:16 lands 15.6mm from a right-handed thumb pivot
+     (comfortable arc ~75mm, stretch ~95mm). Those offsets ARE the point — if
+     they drift, compose is out of easy reach.
+     Here rather than in a `(hover: none) and (pointer: coarse)` block of its
+     own: touch rules scattered across differently qualified branches is how a
+     rule stops reaching half the devices it was written for. One touch branch.
+     A stylus device — `hover: none` with a fine pointer — wants the FAB too.
+
+     ⚠️ `column`, NOT `column-reverse`. The intent is that the 56px primary
+     sits LOWEST, nearest the thumb; the mini is FIRST in the DOM
+     (NotesView.tsx), so plain `column` is what produces that.
+     `column-reverse` would put the primary above the secondary — the
+     opposite. If the DOM order ever flips, this flips with it.
+
+     `env(safe-area-inset-bottom)` resolves to 0 on the app's own surfaces (the
+     page sets no `viewport-fit=cover` and both shells inset the WebView
+     themselves), so the calc costs nothing and is already right in plain
+     mobile Safari, where a bare 16px would put the FAB in the home-indicator
+     strip. */
+  .notes-fab-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    position: fixed;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    /* Above the grid and the selection bar (40), below the sidebar drawer
+       (60) and every modal overlay (100+). */
+    z-index: 50;
+  }
+  /* Both states set their own fill: a class that paints nothing does not
+     fail, it inherits the platform's idea of a button. */
+  .notes-fab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    /* `--r-pill`, i.e. a circle, rather than 8/16px: every other action
+       control in this app is a circle (`.card-action`, `.btn-icon`,
+       `.selection-bar-close`, `.color-dot`) and 999 is the radius token this
+       system actually has — 16 is not one. */
+    border-radius: var(--r-pill);
+    transition: transform 80ms;
+  }
+  .notes-fab:active { transform: scale(0.94); }
+  /* Offset outward so the ring lands on the page, not on the accent fill it
+     would otherwise disappear into. */
+  .notes-fab:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 3px;
+  }
+  .notes-fab-main {
+    width: 56px;
+    height: 56px;
+    background: var(--accent-color);
+    color: var(--on-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.16);
+  }
+  /* Deliberately not peer-equal to the main one: the app's own filter row
+     treats checklists as a subset ("Only lists"), not a second primary. */
+  .notes-fab-mini {
+    width: 40px;
+    height: 40px;
+    background: var(--card-bg);
+    color: var(--accent-color);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  }
+  /* 24-in-56 and 20-in-40 — the standard glyph tiers. CSS beats the JSX
+     width/height attributes, same as `.card-action svg` and `.btn-icon svg`. */
+  .notes-fab-main svg { width: 24px; height: 24px; }
+  .notes-fab-mini svg { width: 20px; height: 20px; }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .keep-header-left h1 { display: none; }
+  /* Slimmer "Take a note..." bar: the 44px quick-action button keeps its
+     touch target and DEFINES the bar's height instead of stacking on top
+     of desktop padding; the gap to the grid halves. */
+  .composer { margin-bottom: 12px; }
+  .composer-collapsed { padding: 4px 12px; }
+  .composer-placeholder { font-size: 16px; }
+  /* Filter chips (All / only-notes / only-lists / reminder / attachment /
+     labels): finger-sized on the phone — bigger glyphs and text, taller
+     targets. CSS wins over the SVGs' attribute size. */
+  .filter-chip {
+    font-size: 18px;
+    line-height: 24px;
+    padding: 9px 17px;
+    border-radius: var(--r-pill);
+  }
+  .filter-chip.icon { padding: 9px 13px; }
+  .filter-chip.icon.active { padding: 9px 17px; }
+  .filter-chip svg { width: 24px; height: 24px; }
+
+  /* Touch has no hover: after a tap the browser keeps :hover applied until
+     the next touch elsewhere, which reads as the toolbar button staying
+     "highlighted". Neutralize hover styling where hovering does not exist;
+     real feedback on touch is the :active press state. */
+  @media (hover: none) {
+    .fmt-btn:hover { background: none; color: inherit; }
+    /* The card strip / select circle rules live in the TOP-LEVEL
+       `@media (hover: none)` block above ("Touch: the card's hover-revealed
+       controls do not exist"), not under 600px: nested here, a 768px tablet — a
+       touch device — would never get them, and taps in the bottom 40px of a card
+       would archive or delete the note instead of opening it. What stays here is
+       hover-neutralisation that is genuinely phone chrome. */
+    .card-action:hover { background: none; color: var(--text-muted); }
+    .filter-chip:hover:not(.active) { background: var(--bg-secondary); }
+  }
+  /* Selection-bar popovers anchored to their little menu-wrap would run off
+     the screen edge at phone widths; anchor them to the BAR (sticky counts as
+     positioned, so absolute children land on it) and span it. max-width
+     lifted so left/right actually size the box — a fixed 280px cap
+     squeezes the label input + Add button past the fill's padding. */
+  .selection-bar-menu-wrap { position: static; }
+  .selection-bar-popover {
+    left: 8px;
+    right: 8px;
+    max-width: none;
+    justify-content: center;
+  }
+  /* Two columns, like Keep. Tighter gaps/padding so ~170px columns breathe;
+     card action icons shrink to keep five in a column.
+     ⚠️ TWO columns is a deliberate design decision. The ~18-char title
+     truncation at 184px cards is accepted; never "fix" it with one column or
+     smaller title type.
+     `repeat(2, 1fr)` rather than `columns: 2` for the reading order — see the
+     note on `.notes-grid` above. On a phone the balancing would be at its
+     worst: the card beside the newest note would be the 19th newest. */
+  .notes-grid { grid-template-columns: repeat(2, 1fr); column-gap: 12px; row-gap: 0; }
+  .note-card { padding: 10px 12px 38px; }
+  /* On touch the action strip is display:none (see the hover:none block),
+     so the room reserved for it goes back to the card. Placed after the
+     38px shorthand above so it wins the cascade. */
+  @media (hover: none) {
+    .note-card { padding-bottom: 12px; }
+    /* The collapsed "Take a note..." row would duplicate the compose entry
+       points. The expanded composer (fullscreen) still shows. */
+    .composer:not(.composer-fullscreen) { display: none; }
+    /* `.notebook-actions` has no override here: on touch the compose entry
+       points are the FAB, because the notebook line would put them 137.4mm
+       from the thumb, past even the stretch zone. The base rule's
+       `display: none` is what applies, and both entries render on the same
+       condition minus the composer's expanded state, so nothing is left
+       without an entry point. */
+  }
+  /* Touch floors for the header controls: 24px glyph + 10px pad
+     and 20px glyph + 12px pad both hit 44px. */
+  .filter-collapse-caret { padding: 12px; }
+  /* The modal action row is where touch users manage a note (card hover
+     actions never render on touch), so it gets the touch floor: 12px
+     padding around the 20px glyph = 44px. */
+  .card-action { padding: 12px; }
+  /* Header circles: 20px glyphs + 12px padding = the same floor. */
+  .btn-icon { padding: 12px; }
+  /* Format toolbar: same floor, glyph stays 16px. */
+  .fmt-btn { padding: 14px 10px; min-width: 44px; }
+  .fmt-mode-btn { padding: 8px 10px; min-width: auto; }
+  /* Color swatches: 36px dot inside a 44px target — the background IS
+     the swatch, so clip it to the content box and pad the difference. */
+  .color-dot {
+    width: 44px;
+    height: 44px;
+    padding: 4px;
+    background-clip: content-box;
+  }
+  /* Panels, same floor. Selection-bar swatches get the color-dot clip
+     treatment; sidebar rows grow to 44 (their in-row rename/delete
+     actions stay 36 — dense in-row targets inside an already-44 row). */
+  .selection-bar-btn { width: 44px; height: 44px; }
+  /* The X is the one clear-selection control — full floor, and no
+     control may flex-shrink below it (a packed row would squeeze the X
+     to 33px). What buys the room for a SINGLE row — so the bar matches
+     the height of the "All Notes" line it replaces — is the count: just
+     the number on phones; the " selected" word is desktop chrome. */
+  .selection-bar-close { width: 44px; height: 44px; }
+  .selection-bar-btn, .selection-bar-close { flex-shrink: 0; }
+  .selection-bar { padding: 6px; gap: 2px; }
+  .selection-bar-count { font-size: 13px; }
+  .selection-bar-count-word { display: none; }
+  .notebook-menu-item { padding: 12px 14px; }
+  .selection-bar-color {
+    width: 44px;
+    height: 44px;
+    padding: 4px;
+    background-clip: content-box;
+  }
+  .reminder-preset { padding: 13px 16px; }
+  .theme-btn { padding: 14px 8px; }
+  .share-input-row select { padding: 12px 8px; font-size: 16px; }
+  .share-input-row input[type="email"] { padding: 12px; font-size: 16px; }
+  .sidebar-item { padding: 12px 16px; }
+  .sidebar-action { padding: 10px; }
+  /* The full touch floor for the app's only "create a notebook" control (see
+     the 32px desktop rule for why that matters). Margins as there: -8 at the
+     top fits inside the 12px of padding above the header text, -4 at the
+     bottom is exactly the header's own padding so the target stops at the
+     first notebook row instead of stealing its top edge, and -12 at the right
+     keeps the glyph on the edge the header already had. */
+  .sidebar-add-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 22px;
+    margin: -8px -12px -4px 0;
+  }
+
+  /* Commit actions — Save, Close, Cancel, and the destructive confirm — get
+     the 44px touch floor. Without it they are the SMALLEST text targets on the
+     screen at 27.6px, 63% of the floor the rest of this UI keeps (`Cancel`
+     73 x 27.6 and `Move to Trash` 115 x 27.6, 8px apart). `min-height` rather
+     than more padding so the horizontal rhythm and the 13px label are
+     untouched — the box grows, the type does not. */
+  .btn,
+  .btn-sm { min-height: 44px; }
+  /* 12px between a cancel and a destructive confirm: the desktop gap of 8
+     is too tight for a thumb. */
+  .confirm-actions { gap: 12px; }
+
+  /* Touch floors for the fields themselves. The font sizes are already ≥16
+     (see `.form-group input`); this is the box. Without it every field a user
+     types into on a touch keyboard is under the floor (`.label-input` 379 x 25,
+     `.notebook-select` 379 x 37, settings display name 352 x 38, search
+     163 x 38, the notebook indicator 161 x 37), and a missed tap on
+     `.label-input` lands on a colour swatch 11px below it. */
+  .label-input,
+  .notebook-select,
+  .notebook-indicator-text,
+  .sidebar-rename input,
+  .composer-title,
+  .form-group input,
+  .form-group select,
+  .search-bar { min-height: 44px; }
+  .reminder-picker { right: 8px; bottom: 48px; min-width: 220px; }
+
+  /* Checklist rows. On a phone the checkbox — the most-tapped control in a
+     notes app — needs the 44px floor too: at 16x16 it is 36% of the floor,
+     with 6px of gap to a textarea that steals the tap and opens the keyboard.
+
+     ⚠️ THE `.color-dot` TRICK DOES NOT WORK ON A NATIVE CHECKBOX, which is why
+     the target is a `<label>` and not the input.
+     `.color-dot` grows to 44 and keeps a 36px dot with `padding` +
+     `background-clip: content-box`. On `<input type="checkbox">` with
+     `appearance: auto` the engine DISCARDS padding and border: written
+     `padding: 12px` on a 44px box, `getComputedStyle` returns `padding: 0px`
+     and the tick paints the full 44. A transparent 12px border is ignored the
+     same way; `outline` keeps the ink small but outlines are not hit-tested,
+     so the target does not grow; `clip-path` just cuts the widget in half.
+     What the engine DOES honour is a non-square box: it draws the widget at
+     `min(width, height)` and centres it — which is why CSS on its own could
+     only reach 24 wide by 44 tall.
+
+     So the target is off the input entirely: `.checklist-checkbox-hit` is
+     the `<label>` wrapping it (ChecklistNoteEditor), which takes the full
+     44x44 and forwards activation to the control. The tick keeps a size of its
+     own — 24, the tier this system reserves for prominent phone glyphs.
+     16x16 (256 square px) to a real 44x44 (1936), 7.6x.
+
+     The negative vertical margins are the other half, and they belong to the
+     LABEL. A bare 44px box under `align-items: flex-start` would park the
+     tick below the first line of text and force every row taller.
+     `margin-top: -7px` puts the tick's centre on the first text line
+     (-7 + 22 = +15, the same pixel as a 16px box with `margin-top: 7px`), and
+     `margin-bottom: -14px` returns the height the taller box added. Drag and
+     delete carry the same envelope so all three centre on the same line.
+
+     Horizontal cost, measured at 411: three 44px targets instead of 24/16/24
+     take 92px more of the row, so the gap drops 6 -> 3 and the row's side
+     padding 8 -> 4 to give some of it back to the text. */
+  .checklist-row {
+    min-height: 44px;
+    padding: 7px 4px;
+    gap: 3px;
+  }
+  .checklist-checkbox-hit {
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    margin: -7px 0 -14px;
+  }
+  .checklist-checkbox {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+  }
+  .checklist-drag {
+    width: 44px;
+    height: 44px;
+    margin: -7px 0 -14px -10px;
+  }
+  .checklist-delete {
+    width: 44px;
+    height: 44px;
+    padding: 4px;
+    margin: -7px 0 -14px;
+  }
+  /* The add row and the completed-section controls are taps too. The 51px
+     left padding lines the "+" up with the tick's ink: 4 row padding − 10
+     drag margin + 44 drag + 3 gap puts the label at 41, and the 24px tick is
+     centred in its 44, so +10 again. The indent follows the ink so the "+"
+     does not sit adrift in the middle of the drag handle. */
+  .checklist-add-row {
+    min-height: 44px;
+    padding: 0 4px 0 51px;
+  }
+  .checklist-completed-header { min-height: 44px; }
+  .checklist-completed-actions { padding-left: 51px; }
+  .checklist-linkbtn { min-height: 44px; padding: 12px 8px; }
+
+  /* On a phone the note IS the screen, so stop drawing it as a centred dialog.
+   *
+   * The dialog shape has a worse consequence than looking wrong. `.note-modal`
+   * is height:auto, so it shrink-wraps its content — which means `flex: 1` on
+   * the editor has NO free space to grow into and it collapses to its
+   * min-height of 120px, about four lines, while the format toolbar above and
+   * the actions below take the rest. Measured on a Pixel 7 (API 36): a 1205px
+   * modal inside a 2274px viewport, the editor 317px, with ~535px of dead
+   * space above AND below it.
+   *
+   * Giving the modal a definite height is what makes `flex: 1` mean anything,
+   * so the editor takes all the slack rather than sitting at its floor.
+   *
+   * ⚠️ These live HERE, in the last mobile block, rather than in one of their
+   * own. A `max-width: 700px` block earlier in the file would match the same
+   * phones, but this block comes later with equal specificity, so its
+   * `padding: 16px` and `max-height: 90vh` would quietly win and the rule
+   * would apply only half — the modal at exactly 90vh, keeping its side
+   * margins. One block per breakpoint, and it has to be the last one.
+   */
+  .note-modal-overlay { padding: 0; }
+  .note-modal {
+    width: 100vw;
+    height: 100vh;
+    /* dvh so the IME opening does not leave the modal taller than the space it
+       actually has; vh first for WebViews that do not know dvh. */
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+  }
+  /* Here the modal's height bounds these. The vh caps are sized for a dialog
+     floating in a desktop viewport; here they only re-impose the squeeze, and
+     min-height must go too or flex still refuses to go below 120px. */
+  .note-editor-cm,
+  .note-modal-body {
+    min-height: 0;
+    max-height: none;
+  }
+
+  /* A CHECKLIST note's editor is `.checklist-editor`, which does not carry the
+     `flex: 1` that `.note-editor-cm` above does. That only matters here,
+     because only here does `.note-modal` have a DEFINITE height (100dvh):
+     without this the rows shrink-wrap, the footer sits directly under the last
+     one, and the bottom two thirds of the sheet is blank white — a checklist
+     with four items ends a third of the way down a full-screen modal and
+     reads as broken.
+
+     Scoped to a direct child of the modal on purpose. The SAME component is
+     the composer's inline checklist, which is a card in the note list and has
+     to keep shrink-wrapping; a bare `.checklist-editor { flex: 1 }` would
+     stretch that one too. `min-height: 0` is the half that actually lets it
+     shrink — a flex item's default `min-height: auto` refuses to go below its
+     content, which is what makes long checklists overflow the sheet instead of
+     scrolling inside it. */
+  .note-modal > .checklist-editor {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* Fullscreen already — the maximize toggle is a no-op dead control here. */
+  .note-modal-maximize { display: none; }
+
+  /* The footer must never run Close off the edge: drop the mode button's
+     "(default)/(this note)" scope text at this width, and tighten the status
+     gap.
+     The footer is one row of four buttons; the arithmetic is at the end of
+     this file. The scroller stays because below ~332px even four buttons plus
+     the status cluster overflow. */
+  .note-modal-actions {
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .note-modal-actions::-webkit-scrollbar { display: none; }
+  .note-modal-status { gap: 8px; min-width: 0; flex: 0 0 auto; }
+  .note-modal-status .mode-scope { display: none; }
+  .note-modal-status .fmt-mode-btn { padding: 14px 10px; }
+
+  /* Editing-chrome collapse: while the keyboard is up (NoteModal watches
+     visualViewport and sets .bottom-hidden) the tool row yields its space to
+     the text — the title, the action icons and Done stay. The format toolbar
+     collapses by hand (.top-hidden). The carets bring everything back without
+     dropping editor focus (pointerdown is prevented). */
+  /* The ROW, not just the toolbar. The caret is a sibling and is
+     `<Show>`n away while collapsed, so hiding only the toolbar would leave an
+     empty flex line behind — and that line carries the toolbar's border,
+     so the collapsed state would draw a stray 1px rule across the modal. */
+  .note-modal.top-hidden .format-toolbar-row { display: none; }
+  /* ONE row collapses. The colour/label controls are dialogs
+     and the four actions sit on the footer's own line, so the keyboard takes
+     the tool row and leaves Done, the save state and the actions in place —
+     which is what a person needs while typing. Mirrored by
+     BOTTOM_HIDDEN_SECTIONS in NoteModal.tsx; chromeCollapse.test.ts binds the
+     two and fails on a drift. */
+  .note-modal.bottom-hidden .note-modal-tools { display: none; }
+
+  /* The two chrome carets. Both are FIXED: the top one at the title's right
+     edge, the bottom one at the footer's left edge, in the collapsed state and
+     the expanded one alike. A pair that swapped rows as they toggled would
+     make a double tap to undo a mis-tap hit a different control the second
+     time. */
+  button.chrome-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    flex: 0 0 auto;
+  }
+  /* The top caret keeps the full 44×44 and therefore SETS the title row's
+     height. That is the right trade: 16+4px of padding around ~30px of title
+     text (50px) with the caret on a 20px row of its OWN beneath it would take
+     70px before a character was typed. One 44px row replaces both. The
+     title's own padding is 6px; it is the touch floor, not the padding, that
+     sets the row. */
+  /* Nudged off the modal's left edge onto the same optical margin as the
+     action icons beside it. */
+  .note-modal-footer .chrome-toggle-bottom { margin-right: 2px; }
+  /* Touch floor for the tools themselves, and ONE line at every width: on a
+     phone "Labels & Notebooks" must not wrap to two lines and take the whole
+     tools row a line taller. Here the button is a grid: icon or swatch |
+     words | count. The words column is `minmax(0, max-content)`: as wide as the
+     words when there is room, and able to give all of it back when there
+     isn't. A flex button couldn't: its minimum width is its whole unwrapped
+     label, so it would push the row wider. */
+  .note-tool {
+    min-height: 44px;
+    padding: 10px 12px;
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-template-columns: auto minmax(0, max-content);
+    white-space: nowrap;
+  }
+  .note-tool-text { overflow: hidden; text-overflow: ellipsis; }
+  /* Colour and Attachments are their icons on a phone: the dot, the paper-clip
+     (and its count). That leaves Labels & Notebooks the room to show in full
+     from 360px up; only a narrower screen cuts it. Every column is `auto`, so
+     nothing in them gives way; flex-shrink 0 keeps the button whole, and 44px
+     is the touch floor. */
+  .note-tool-icon-only {
+    grid-template-columns: none;
+    justify-content: center;
+    min-width: 44px;
+    flex-shrink: 0;
+  }
+  /* Their words stay in the DOM for screen readers, so the buttons' names
+     don't change; they are only clipped out of sight. Never display: none or
+     visibility: hidden, either of which would take the name with it. */
+  .note-tool-icon-only > .note-tool-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Tighter still on a phone, where the keyboard is the thing competing for
+     these pixels. The composer's title is not listed: its 4px/0 is already
+     the tighter of the two, and it takes its horizontal inset from the card. */
+  .note-modal-title { padding: 4px 0 2px 12px; }
+  .note-titlebar { padding-right: 4px; }
+
+  /* The composer becomes the screen while expanded — the inline card is
+     unusable at phone size with the keyboard up, and creating a note should
+     feel like editing one. Same collapse behavior as the modal; Discard/Save
+     stay like the modal's Close. */
+  .composer.composer-fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    margin: 0;
+    max-width: none;
+  }
+  .composer-fullscreen .composer-expanded {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    border: none;
+    border-radius: 0;
+    overflow: hidden;
+  }
+  .composer-fullscreen .composer-editor {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  /* The row, for the same reason as the modal's: the caret is unrendered
+     while collapsed and the border lives on the row. */
+  .composer-expanded.top-hidden .format-toolbar-row { display: none; }
+  .composer-expanded.bottom-hidden .composer-labels,
+  .composer-expanded.bottom-hidden .composer-meta { display: none; }
+  /* `margin-right: auto` pins it left; Discard/Save stay right. */
+  .composer-footer button.chrome-toggle-bottom { margin-right: auto; }
+
+  /* The sidebar's overlay/drawer treatment is not in this block: it is a
+     top-level `@media (max-width: 1023px)` — see "The sidebar is a DRAWER
+     below 1024px" next to `.sidebar`'s own rules. It is not a phone
+     question: between 601 and 1023 an in-flow 240px column turns three sane
+     cards into two fat ones. */
+
+  /* The color palette + notebook select cannot share a row at this width —
+     the select would bleed off the right edge. Stack them, full width. */
+  .composer-meta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .composer-meta .notebook-select-group {
+    width: 100%;
+    min-width: 0;
+  }
+  .composer-meta .notebook-select {
+    width: 100%;
+  }
+}
+
+/* Settings checkbox row — Settings otherwise uses paired option cards, but a
+   binary that MODIFIES an existing mode rather than choosing between modes
+   reads better as a checkbox hanging off the thing it modifies. */
+/* SPECIFICITY: this control lives inside `.form-group`, whose generic rules
+   are `.form-group label` and `.form-group input` — BOTH 0,2,0, which outrank a
+   bare `.settings-check` at 0,1,0. So without a stronger selector the intended
+   flex row is overridden to `display: block` (checkbox stranded on its own line
+   above the text) and the checkbox itself is stretched by `width: 100%` +
+   `padding: 10px 12px`, which makes it look adrift in the middle of the row.
+   Both selectors below are written to outrank those. */
+.form-group label.settings-check,
+.settings-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  padding: 10px 12px;
+  margin-bottom: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  /* .form-group label also sets these; the row is not a caption. */
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+.form-group .settings-check input[type="checkbox"],
+.settings-check input[type="checkbox"] {
+  /* Undo `.form-group input`'s full-width text-field treatment. */
+  width: auto;
+  padding: 0;
+  margin-top: 2px;
+  accent-color: var(--accent-color);
+  flex: none;
+}
+.settings-check-name { display: block; font-weight: 600; color: var(--text-primary); }
+.settings-check-desc { display: block; font-size: 12px; color: var(--text-secondary); margin-top: 2px; line-height: 1.5; }
+.settings-plan-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-plan-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+/* Device settings rows: label + current value + chevron, each opening the
+   native screen at its own section. Rows rather than one button so the
+   values are visible without leaving the panel. */
+.device-rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  border-radius: var(--r-surface);
+  overflow: hidden;
+}
+.device-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+.device-row:last-child { border-bottom: none; }
+.device-row:hover { background: var(--bg-hover); }
+.device-row-label { flex: 1; min-width: 0; }
+.device-row-value {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55%;
+}
+/* A row that only navigates sends an empty value; without this it still
+   claims a flex gap between the label and the chevron. */
+.device-row-value:empty { display: none; }
+.device-row-chevron { color: var(--text-muted); flex-shrink: 0; }
+
+/* ⓘ on the paid plan row — muted until hovered.
+   .btn-icon carries the 20px glyph and the phone touch floor. */
+.settings-plan-info {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.settings-plan-info:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.settings-check-desc code {
+  background: var(--bg-hover); border-radius: 3px; padding: 0 3px;
+  font-family: 'SF Mono', 'Fira Code', monospace; font-size: .95em;
+}
+
+/* Article 16 DSA: the report affordance on a note shared with you.
+   Deliberately quiet — it sits below Accept and Decline, because the common
+   case is deciding about a share, not reporting one. Findable when wanted and
+   out of the way when not. */
+.share-report {
+  margin: 2.5rem auto 0;
+  max-width: 46rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(127, 127, 127, 0.25);
+}
+
+.share-report-open {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  color: rgba(127, 127, 127, 1);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.share-report-open:hover { color: inherit; }
+
+.share-report-form { display: flex; flex-direction: column; gap: 0.85rem; }
+.share-report-form label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; }
+.share-report-form textarea,
+.share-report-form input[type="text"],
+.share-report-form input[type="email"] {
+  font: inherit;
+  padding: 0.5rem;
+  border: 1px solid rgba(127, 127, 127, 0.4);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+}
+.share-report-intro { font-size: 0.9rem; margin: 0; }
+.share-report-note { font-size: 0.8rem; opacity: 0.75; margin: 0; line-height: 1.45; }
+
+.share-report-check { flex-direction: row !important; align-items: flex-start; gap: 0.5rem; }
+.share-report-check input { margin-top: 0.2rem; }
+
+.share-report-actions { display: flex; gap: 0.6rem; justify-content: flex-end; }
+.share-report-actions button { font: inherit; padding: 0.45rem 0.9rem; border-radius: 6px; cursor: pointer; }
+.share-report-actions button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.share-report-error { font-size: 0.85rem; color: #b91c1c; margin: 0; }
+
+.share-report-done { font-size: 0.9rem; line-height: 1.5; }
+.share-report-done code {
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(127, 127, 127, 0.15);
+}
+
+/* Shown while a deep link resolves — the android shell opens every note this
+   way, so this is what a phone user sees between tapping a note and reading it.
+   Deliberately plain: the alternative would be watching the whole app assemble
+   itself, list and sidebar and all, before the note arrived. */
+.deep-link-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 12px;
+  color: var(--text-muted);
+}
+.deep-link-loading p { margin: 0; font-size: 14px; }
+
+/* ===========================================================================
+   Smaller layout rules. Every selector here either adds a rule not stated
+   earlier or deliberately overrides one that is.
+   =========================================================================== */
+
+/* The "couldn't be opened" banner. Grouped by sender in the component;
+   here it is given a compact shape so two blocked notes do not take nearly
+   half of the first phone screen. The technical verdict sits behind a
+   details toggle, which is why there is a small link-style button in it. */
+.blocked-shares-title { font-weight: 600; }
+.blocked-share-group { margin-top: 8px; }
+.blocked-share-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.blocked-share-text { flex: 1; min-width: 0; }
+.blocked-share-sender { font-weight: 500; }
+.blocked-share-advice { color: var(--text-secondary); }
+.blocked-share-dismiss { flex-shrink: 0; }
+.blocked-share-details-toggle {
+  background: none;
+  border: none;
+  padding: 2px 0;
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.blocked-share-details-toggle:hover { color: var(--text-primary); }
+/* Two toggles side by side (Safety number, Details), their panels below;
+   without the gap they read as one run-on link. */
+.blocked-share-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+/* The share panel's address field: same tokens as every other input, so it
+   matches the styled select beside it. */
+.share-input-row input[type="email"] {
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  min-width: 0;
+}
+.share-input-row input[type="email"]:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+/* The panel renders above the modal's action row (NoteModal.tsx), so it gets
+   a recessed ground that reads as a section OF the note rather than a second
+   dialog stacked under the first. */
+.share-panel {
+  background: var(--bg-secondary);
+}
+
+/* The empty state offers the way out of the filter that emptied it. */
+.empty-state-action { margin-top: 12px; }
+/* Several ways back, side by side and wrapping on a phone. */
+.empty-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.empty-state-actions .empty-state-action { margin-top: 0; }
+
+/* The phone chip row scrolls, so its last chip would simply look cut off. A
+   fade on the right edge says so, and only while there is something to scroll
+   to. Desktop is unaffected: the row fits. */
+@media (max-width: 600px) {
+  .filter-bar {
+    /* The mask is the affordance; it costs no layout and no extra element. */
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+    scrollbar-width: none;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  /* Trailing padding so the last chip can clear the fade when scrolled to the
+     end — without it the mask would eat the chip the user scrolled to reach. */
+  .filter-bar::after {
+    content: '';
+    flex: 0 0 24px;
+  }
+}
+
+/* "New notebook" Save and Cancel buttons are phone-only: a desktop keyboard
+   makes Enter discoverable, and the row would just be clutter there. */
+.notebook-create-actions { display: none; }
+@media (max-width: 600px) {
+  .notebook-create-actions {
+    display: flex;
+    gap: 8px;
+    margin: 6px 0 10px;
+  }
+  .notebook-create-actions .btn { flex: 1; min-height: 44px; }
+}
+
+/* Focus ring for the settings panel's controls. :focus-visible only, so
+   pointer users see nothing change. */
+.settings-panel button:focus-visible,
+.settings-panel input:focus-visible,
+.settings-panel select:focus-visible,
+.settings-panel a:focus-visible,
+.share-panel button:focus-visible,
+.share-panel input:focus-visible,
+.share-panel select:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* A 3px stripe alone is invisible as a scanning aid at grid density, so
+   NoteCard exposes the chosen colour as `--note-color` and the whole card
+   is washed with it. color-mix keeps it a tint rather than the saturated
+   swatch, and mixing into the card's own ground means the same rule reads
+   correctly on both themes. */
+.note-card { --note-color: transparent; }
+/* TWO LAYERS, SO THE CARD CANNOT LOSE ITS GROUND.
+   A single `background: color-mix(in srgb, var(--note-color) 14%,
+   var(--card-bg))` would be fragile. A custom property is a token stream —
+   whatever the markup hands over arrives here verbatim and only fails inside
+   the `color-mix()` — and `--note-color: null` (the STRING) makes the
+   color-mix invalid at computed-value time, which drops the whole
+   declaration: the card would paint `rgba(0, 0, 0, 0)`, fully transparent,
+   beside opaque neighbours.
+
+   As a wash over an opaque ground, an invalid value can only lose the WASH.
+   The arithmetic is the same for a real colour: compositing `rgba(C, 0.14)`
+   over B is the same 0.14·C + 0.86·B the mix produces. A `transparent` colour
+   yields a plain card instead of an 86%-opaque one. NoteCard guards the value
+   as well (lib/noteColor.ts) — this is the half that does not depend on the
+   data being sane. */
+.note-card[style*="--note-color"] {
+  background-color: var(--card-bg);
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--note-color) 14%, transparent),
+    color-mix(in srgb, var(--note-color) 14%, transparent)
+  );
+}
+
+/* The label field is a boxed input (transparent border at rest,
+ * visible on hover and focus), not a bare line.
+ */
+.label-input {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+.label-input:hover { border-color: var(--border-color); }
+.label-input:focus {
+  border-color: var(--accent-color);
+  background: var(--bg-primary);
+}
+
+/* The "clear notebook" glyph is only 12px, so its hit target is padded to
+   32px, and to the 44px floor the rest of the phone UI keeps on a phone. */
+.notebook-clear {
+  min-width: 32px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.notebook-clear:hover { background: var(--bg-hover); }
+@media (max-width: 600px) {
+  .notebook-clear { min-width: 44px; min-height: 44px; }
+}
+
+
+/* The phone search field is ~280px, and the clear "×" must not sit on top
+   of the last characters typed. The reserve itself is in the base rule,
+   since the button renders at every width; what is left here is the touch
+   floor for the button.
+   40 wide x 44 tall rather than 44 x 44, and for the same reason the checklist
+   tick is 24 x 44: the field is the scarcest horizontal space in the app —
+   163px at 411, against a placeholder that needs 107.6 — so the extra 4px buys
+   more as text than as target. 40 x 44 is 1760 square pixels against a
+   32 x 32 button's 1024. */
+@media (max-width: 600px) {
+  .search-bar { padding-right: 44px; }
+  .search-clear {
+    width: 40px;
+    height: 44px;
+    right: 2px;
+    border-radius: var(--r-control);
+  }
+}
+
+/* The phone formatting toolbar is one scrolling row: wrapped, it takes three
+   rows and leaves the collapse caret alone on the last one, ~90px of chrome
+   above the text. This matches how the filter row and Android's toolbars
+   behave. The caret never scrolls away because it is OUTSIDE the scroller
+   (see `.format-toolbar-row`) — collapsing the toolbar must not itself
+   require scrolling the toolbar.
+
+   The wrap-not-overflow rule earlier in this file is about the MODAL's
+   overflow-x; setting it on this element only is safe. */
+@media (max-width: 600px) {
+  .format-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* The overflow is real: 6-7 of the 14 actions are past the right edge at
+       rest (scrollWidth 744 against a 411 client) — Checklist, Code block,
+       Heading, Link, Divider, Quote — with the scrollbar suppressed on both
+       engines, so nothing else says there is more.
+       A mask on the scroller is the `.filter-bar` treatment. It works because
+       the collapse caret is outside the scroller (a sticky child caret would
+       fade along with everything else), so the right edge is a real scroll edge
+       and can say so. */
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+  }
+  .format-toolbar::-webkit-scrollbar { display: none; }
+  /* Trailing room so the last button can clear the fade at full scroll —
+     without it the mask eats the button the user scrolled to reach. */
+  .format-toolbar::after {
+    content: '';
+    flex: 0 0 24px;
+  }
+
+  /* THE FOOTER IS ONE ROW, and the arithmetic is why — the numbers are written
+     down rather than the verdict.
+     Seven buttons do not fit one row: measured at 411, actions need 320
+     (7 x 44 + gaps) against 180.3 for the status cluster, into 399 of content —
+     101 short, and still 14 short with both Copy and the save indicator dropped.
+     Pin and Archive are not on the row. Both are decisions about where a
+     note LIVES rather than about the note in front of you, both are already on
+     the card's own action strip and in the selection bar, and the modal is the
+     one place you are not choosing between notes. Four buttons need ~182, so
+     362 goes into 399 with 37 to spare.
+     ⚠️ If this row ever grows past four, re-measure before assuming it still
+     fits — and if it does not, use the EXPLICIT two-row form
+     (`flex: 1 0 100%` and an `order` on both children) rather than `flex-wrap`
+     alone: wrapping as a last resort makes the footer one row on some content
+     and two on other, changing height as panels open; the varying height is
+     the problem, not the second row.
+     The scroller below still earns its keep under ~332px, where even four
+     buttons plus the status cluster overflow. */
+  .note-modal-actions {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+  }
+  .note-modal-actions::after {
+    content: '';
+    flex: 0 0 24px;
+  }
+}
+
+/* Preview and Hybrid drop the editor's monospace face: the mode that is
+   supposed to look like the finished note must not look like source, and
+   monospace on a 390px phone wraps every line at ~30 characters. Markdown
+   mode and code spans keep monospace: there the character grid is the point.
+   The wrapper `.note-editor-cm` carries the mode as a class (NoteEditor.tsx)
+   — CodeMirror's own DOM is left alone. */
+/* `.cm-scroller`, not `.cm-content`: the monospace comes from CodeMirror's own
+   baseTheme, and the editor's `EditorView.theme({'&': {fontFamily:'inherit'}})`
+   sets it on `.cm-editor` — which `.cm-scroller`'s own rule then overrides.
+   The CodeMirror theme beats index.css at equal specificity, so this uses two
+   classes of specificity above CM's single-class rule. */
+.note-editor-cm.mode-preview .cm-scroller,
+.note-editor-cm.mode-hybrid .cm-scroller {
+  font-family: var(--font-body, system-ui, -apple-system, 'Segoe UI', sans-serif);
+  line-height: 1.6;
+}
+/* Code keeps the character grid in every mode — there the columns are the
+   point. `.cm-md-code` sets its own family but at lower specificity than the
+   rule above, so it has to be restated here or inline code would go
+   proportional in exactly the two modes that rule covers. */
+.note-editor-cm.mode-preview .cm-md-code,
+.note-editor-cm.mode-hybrid .cm-md-code,
+.note-editor-cm.mode-preview .cm-md-codeblock,
+.note-editor-cm.mode-hybrid .cm-md-codeblock,
+.note-editor-cm.mode-preview .cm-md-codefence,
+.note-editor-cm.mode-hybrid .cm-md-codefence {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}

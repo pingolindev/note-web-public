@@ -1,0 +1,41 @@
+# .dockerignore for the Note web editor's docker build context.
+#
+# The editor's Dockerfile does:
+#
+#     COPY ui/package.json ui/package-lock.json ./
+#     RUN npm ci
+#     COPY ui/ .
+#
+# The second COPY merges the host tree over /app. If the host's ui/node_modules
+# were in the context, Docker COPY would overwrite file by file, so every module
+# the host has would win over the modules `npm ci` had just resolved from the
+# committed lockfile: the lockfile install would have no effect on the image,
+# and the published bundle would be built from whatever is on the build machine.
+# Excluding node_modules here is what makes `npm ci` mean something.
+#
+# .git is excluded because the build takes its commit from the BUILD_COMMIT
+# build-arg and never from an in-context .git, and history in a published layer
+# is an exfiltration surface.
+
+# --- Dependencies and build output: installed/rebuilt inside the image ---
+**/node_modules/
+**/dist/
+**/target/
+
+# --- VCS metadata ---
+.git/
+**/.git/
+
+# --- Key/cert material and provider creds ---
+**/*.key
+**/*.keystore
+**/*.jks
+**/*.p12
+**/*.p8
+**/*.mobileprovision
+**/google-services.json
+**/GoogleService-Info.plist
+
+# --- Local env files ---
+**/.env
+**/.env.*

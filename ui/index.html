@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#6d4aff" />
+    <meta name="description" content="Pingolin Note - E2EE Notes" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <title>Pingolin Note</title>
+    <!--
+      BOOT SKELETON — the only thing that can paint before the bundle runs.
+
+      Measured on a Galaxy A16 (cold, signed in, Navigation Timing from inside
+      the page): document 8->150ms, first-paint ~272-320ms, first-CONTENTFUL-
+      paint ~924-988ms. The window between them was one flat background colour
+      and then a 32px spinner from ~650ms — the app's own `.loading-spinner`,
+      which cannot appear any sooner because Solid has to boot to render it.
+      `<div id="root"></div>` on its own gives the browser nothing to draw.
+
+      So this is inline, and deliberately self-contained: the app stylesheet is
+      a separate request, and anything that waits on it paints no earlier than
+      the spinner already did. Inline STYLE only, never inline script — the CSP
+      in note-backend/src/main.rs is `script-src 'self'` with no nonce, so an
+      inline <script> is silently blocked (and the WebView console is silent
+      too, so it would fail invisibly). That constraint is why the theme comes
+      from `prefers-color-scheme` rather than the stored setting: a user who
+      FORCES light on a dark device (or the reverse) sees the skeleton in the
+      system palette for ~300ms before stores/settings.ts applies `.light` /
+      `.dark`. Reading that setting needs script, and loosening script-src on
+      an E2EE notes app is not worth a 300ms palette match.
+
+      For the same reason the skeleton cannot know whether there is a session:
+      a signed-out visitor sees it briefly before App.tsx redirects to the
+      portal. It is neutral grey boxes, and the alternative it replaces was a
+      blank screen followed by a spinner, so this is not a worse lie — but it
+      IS a lie, so keep the shapes generic and never put note-like text here.
+
+      Geometry tracks index.css: `.keep-header` (8px 16px, 16px gap, 1px
+      bottom border), `.keep-main` (16px padding, 1200px cap), `.notes-grid`
+      (auto-fill 280px / two columns under 600px, 16px / 12px column gap).
+      Card height is 240px because that is the app's OWN pre-masonry geometry
+      — `.note-card { grid-row-end: span var(--card-span, 60) }` over
+      `grid-auto-rows: 4px` — so the skeleton matches what the real grid draws
+      on its first frame, before lib/masonry.ts measures anything.
+
+      ⚠️ THE CHROME IS NOT THE SAME SHAPE AT BOTH WIDTHS, and the first version
+      of this file only measured the phone. Every row above the grid is shorter
+      on a desktop, and there is an extra one: `.composer` ("Take a note…") is
+      hidden by `@media (hover: none)`, NOT by width, so a mouse-driven window
+      of any size has it. Measured live at 1280px: header 57, composer 70 +24,
+      notebook 49 +4, tabs 46 +16, filter 34 +12 — grid at y=328, where this
+      skeleton was putting its cards at y=259. Every card jumped 95px on
+      arrival, which is the backfire this file exists to avoid, and it happened
+      on the web only. The `min-width: 601px` block below carries those
+      numbers; the base values stay the phone's, which were measured at 384px
+      and are correct there.
+
+      Handoff: `#root:not(:empty)` hides this the instant Solid renders, and
+      App.tsx renders <BootSkeleton/> (the same classes) for its loading and
+      Suspense fallbacks, so the user sees ONE loading appearance instead of
+      skeleton -> spinner -> content.
+
+      Colours are literals, not var(), because the token sheet is exactly the
+      external stylesheet this must not wait for. Keep them in step with
+      theme/generated/note.css: --bg-primary, --card-bg, --border-color.
+    -->
+    <style>
+      /* Styled by CLASS, not id: components/BootSkeleton.tsx renders the same
+         markup for App.tsx's fallbacks and two live id="boot-skeleton" nodes
+         would be invalid. The id exists only for the handoff rule below. */
+      .bs-root {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        background: #fafafa;
+        pointer-events: none;
+      }
+      /* Solid has rendered — stand down. */
+      #root:not(:empty) ~ #boot-skeleton { display: none; }
+      .bs-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 8px 16px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+        /* Measured, not guessed: `.keep-header` is 61px at 384px width. */
+        height: 61px;
+        box-sizing: border-box;
+      }
+      .bs-block { background: rgba(0, 0, 0, 0.07); border-radius: 8px; }
+      .bs-icon { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
+      .bs-search { flex: 1; max-width: 600px; height: 40px; }
+      .bs-spacer { margin-left: auto; display: flex; gap: 4px; flex-shrink: 0; }
+      .bs-main {
+        flex: 1;
+        width: 100%;
+        /* ⚠️ MUST MATCH `.keep-main` in index.css, INCLUDING the column snap.
+           This is the pre-boot placeholder, so any difference is a visible jump
+           the moment the app takes over: at 1200 against the real 2200 the
+           skeleton's first card sat at x=56 and the real one at x=16, measured.
+           The snap keeps the container a whole number of 296px columns so the
+           board is centred rather than packed left — see the long note in
+           index.css. Bound by bootSkeletonWidth.test.ts. */
+        max-width: 2088px;
+        max-width: min(2088px, calc(round(down, 100% - 16px, 296px) + 16px));
+        margin: 0 auto;
+        padding: 16px;
+        box-sizing: border-box;
+        overflow: hidden;
+      }
+      /* Hidden by default because the phone (touch) does not draw it — see the
+         `hover: none` rule at the end, which is the app's own condition. */
+      .bs-composer {
+        display: none;
+        max-width: 600px;
+        margin: 0 auto 24px;
+        height: 70px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        background: #ffffff;
+        box-sizing: border-box;
+      }
+
+      /* The chrome between the header and the grid. Heights and margins are
+         MEASURED off the running app at 384px (touch, so `.composer` is
+         display:none): notebook-indicator 56 +4, view-tabs 46 +16, filter-bar
+         48 +12. That arithmetic puts the grid at y=259, which is where the
+         real one starts. Without these three rows the skeleton's cards sat at
+         y=73 and every card jumped ~190px when content arrived — the exact
+         way skeletons backfire. `.section-label` ("PINNED", 26px) is NOT
+         reproduced: it only exists for an account that has pinned notes, so
+         reproducing it would be wrong more often than right. Accounts with
+         pins therefore see a 26px settle, not 190px. */
+      .bs-notebook { height: 56px; margin-bottom: 4px; display: flex; align-items: center; }
+      .bs-notebook .bs-block { width: 150px; height: 28px; }
+      .bs-tabs {
+        height: 46px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        box-sizing: border-box;
+      }
+      .bs-tabs .bs-block { width: 56px; height: 16px; }
+      .bs-chips { height: 48px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+      .bs-chips .bs-block { width: 52px; height: 34px; border-radius: 999px; }
+      .bs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 280px);
+        justify-content: start;
+        column-gap: 16px;
+        row-gap: 16px;
+      }
+      .bs-card {
+        height: 240px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        background: #ffffff;
+      }
+      /* Two columns on a phone — a standing product decision, see index.css. */
+      @media (max-width: 600px) {
+        .bs-grid { grid-template-columns: repeat(2, 1fr); column-gap: 12px; row-gap: 12px; }
+        /* Fluid columns below the breakpoint, so the snap must not apply. */
+        .bs-main { max-width: none; }
+      }
+      /* The desktop chrome, measured live at 1280px (see the note above). */
+      @media (min-width: 601px) {
+        .bs-header { height: 57px; }
+        .bs-composer { display: block; }
+        .bs-notebook { height: 49px; }
+        .bs-chips { height: 34px; }
+      }
+      /* The app hides the composer on touch, whatever the width, so this has to
+         be the condition here too — and it has to come after the width query to
+         win on a touch screen that is wider than 600px. */
+      @media (hover: none) {
+        .bs-composer { display: none; }
+      }
+      @media (prefers-color-scheme: dark) {
+        .bs-root { background: #1a1a2e; }
+        .bs-header,
+        .bs-tabs { border-bottom-color: rgba(255, 255, 255, 0.1); }
+        .bs-block { background: rgba(255, 255, 255, 0.07); }
+        .bs-card,
+        .bs-composer { border-color: rgba(255, 255, 255, 0.1); background: #1e1e32; }
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!-- Must stay AFTER #root: the handoff rule above is a sibling combinator. -->
+    <div id="boot-skeleton" class="bs-root" aria-hidden="true">
+      <div class="bs-header">
+        <span class="bs-block bs-icon"></span>
+        <span class="bs-block bs-search"></span>
+        <span class="bs-spacer">
+          <span class="bs-block bs-icon"></span>
+          <span class="bs-block bs-icon"></span>
+        </span>
+      </div>
+      <div class="bs-main">
+        <div class="bs-composer"></div>
+        <div class="bs-notebook"><span class="bs-block"></span></div>
+        <div class="bs-tabs">
+          <span class="bs-block"></span>
+          <span class="bs-block"></span>
+          <span class="bs-block"></span>
+        </div>
+        <div class="bs-chips">
+          <span class="bs-block"></span>
+          <span class="bs-block"></span>
+          <span class="bs-block"></span>
+          <span class="bs-block"></span>
+        </div>
+        <div class="bs-grid">
+          <div class="bs-card"></div>
+          <div class="bs-card"></div>
+          <div class="bs-card"></div>
+          <div class="bs-card"></div>
+          <div class="bs-card"></div>
+          <div class="bs-card"></div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>

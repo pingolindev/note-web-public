@@ -1,0 +1,214 @@
+{
+  "format": "pingolin erasure receipt v1 test vectors",
+  "signed_message": "UTF-8 \"pingolin.erasure_receipt.v1\\n\" followed by the payload bytes",
+  "test_seed_hex": "731c13c921b4371881767b851b7e8a08c7b232b7e594d93f8645dce241a637a7",
+  "public_keys_hex": [
+    "0fe32ab8b506102f079f807130269402351b97d13c8a0e208464d9f32bf410f2"
+  ],
+  "note_on_keys": "public_keys_hex is the verifier's list ([current, previous] in a real build); a verifier tries each. The other_* key is in no list.",
+  "other_test_seed_hex": "cfa147c804538ca232e757c3e614aab173d8e2352da51efed2fe97985ecb6832",
+  "other_public_key_hex": "95a0efb4e4344e9ad19e21d0c87c753f74a56442050eaa439982254207e87531",
+  "verify_at": 1790640060,
+  "cases": [
+    {
+      "name": "valid",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAwLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9.1sdgrJ6-OePhJK7_qdNMRg8uaQ8lIHev7rde4ek4BaKSGa624igGqohfCd5b3NIcY2Qc8kTdnGWs4oQYlM0bDQ",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "accept",
+        "note-web": "accept"
+      },
+      "why": "the reference receipt"
+    },
+    {
+      "name": "aud_track_web_only",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiJdLCJpYXQiOjE3OTA2NDAwMDAsImV4cCI6MTc5MDY0MDYwMCwianRpIjoiNWY4ZTJkN2M0YjFhMDlmOGU3ZDZjNWI0YTM5MjgxNzAifQ.zjYVu9quVA5u090dDxt7NEUU9mXKoOtrN3-hOSiqe1FHycgEwd9PGyhCW1vbl01DxiWnj5qTf4onKB5ZXTHdCg",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "accept",
+        "note-web": "refuse"
+      },
+      "why": "note-web is not in aud"
+    },
+    {
+      "name": "aud_note_web_only",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAwLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9.nzIwAfyEbwGUxEV0d2yMI6G0rkiHR6PWYhCC1spMBR3ayQuxc16tF3QjfsngoQ9polQ_QMGWqmb3tF78sRb2AQ",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "accept"
+      },
+      "why": "track-web is not in aud"
+    },
+    {
+      "name": "flipped_signature_byte",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAwLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9.18dgrJ6-OePhJK7_qdNMRg8uaQ8lIHev7rde4ek4BaKSGa624igGqohfCd5b3NIcY2Qc8kTdnGWs4oQYlM0bDQ",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "signature byte 0 xor 0x01"
+    },
+    {
+      "name": "signed_by_other_key",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAwLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9.CXuzOXxeookdwGtvI0JZ-8A1nkn1WyS0PLm31TxOygtvfuyz5O7Xp75RRt2kxS5gYwBVKdOFiEtpwSj4JT93DA",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "a valid signature by a key not in the list"
+    },
+    {
+      "name": "truncated_signature",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAwLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9.1sdgrJ6-OePhJK7_qdNMRg8uaQ8lIHev7rde4ek4BaKSGa624igGqohfCd5b3NIcY2Qc8kTdnGWs4oQYlM0b",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "the signature's last byte cut: 63 bytes"
+    },
+    {
+      "name": "expired",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDYzODgwMCwiZXhwIjoxNzkwNjM5NDAwLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9.SpAm4FZndaWFEUvm9CcWQoP5NA8KOv1TWzns7TBmbjsHYsuc2mwl3yipvLzE8PyMX8KnQX-yGh_4hdslevmqBg",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790638800,\"exp\":1790639400,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "exp is 660 s before verify_at"
+    },
+    {
+      "name": "wrong_aud",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrIiwibm90ZSJdLCJpYXQiOjE3OTA2NDAwMDAsImV4cCI6MTc5MDY0MDYwMCwianRpIjoiNWY4ZTJkN2M0YjFhMDlmOGU3ZDZjNWI0YTM5MjgxNzAifQ.K2u53lqckpNlx5ihU8q7rIPodwf6rY9mXcLYgZRbhqppWuJjZ5eWTRN1k72tTQUj40wC5R3v_e3sLnf9W3utBg",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track\",\"note\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "the access token's audience names, not the web apps'"
+    },
+    {
+      "name": "extra_field",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAwLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCIsImVtYWlsIjoic29tZW9uZUBleGFtcGxlLnRlc3QifQ.tqYra2jAGAh2O-vivAfYtjAjLk5Lx7yAjSBslD7H9mz03tK57wbKzesWZZlQ-yxyCuI9vL3ztM7vNn101WgRBA",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\",\"email\":\"someone@example.test\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "an unknown field"
+    },
+    {
+      "name": "missing_field",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAwfQ.dGcCaYpUjAjjIUQI3t295mfuLaBFA3Bo9JhmPaB6oRvNv3Q5xvSBYA-xxsVpq5yW6KwO0Z_u0gpuTLQvD0FTCw",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "no jti"
+    },
+    {
+      "name": "non_canonical_sub",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM0YyQzlDOEUtNUExQi00RDdFLTlDM0EtMUIyRDNFNEY1QTZCIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAwLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9.mnRnmIXCoZQs3D2FgSoZzJbq-uMuxwhHBUby2yspaw7cUCK5_zxzjzMpEt5xfVNi4BkreiIRxoGvXuEk9Ld7CQ",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3F2C9C8E-5A1B-4D7E-9C3A-1B2D3E4F5A6B\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "sub in upper case"
+    },
+    {
+      "name": "sub_without_hyphens",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGU1YTFiNGQ3ZTljM2ExYjJkM2U0ZjVhNmIiLCJhdWQiOlsidHJhY2std2ViIiwibm90ZS13ZWIiXSwiaWF0IjoxNzkwNjQwMDAwLCJleHAiOjE3OTA2NDA2MDAsImp0aSI6IjVmOGUyZDdjNGIxYTA5ZjhlN2Q2YzViNGEzOTI4MTcwIn0.nhIbXXNwa3aUDngKBDuxv43jLZrJW7DDvmBgu6X_tsv5xF0yQnn1Q40LewvjdGhmDZZlfrwJYNpLIZ5KcbtIAg",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e5a1b4d7e9c3a1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "the same id, not hyphenated"
+    },
+    {
+      "name": "sub_not_a_uuid",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoibm90LWEtdXVpZCIsImF1ZCI6WyJ0cmFjay13ZWIiLCJub3RlLXdlYiJdLCJpYXQiOjE3OTA2NDAwMDAsImV4cCI6MTc5MDY0MDYwMCwianRpIjoiNWY4ZTJkN2M0YjFhMDlmOGU3ZDZjNWI0YTM5MjgxNzAifQ.TAI0mjf_bAvBu2Psn3j2ii1LWUa5LoaefzWQTRMSn6yOlndb_Oh4SOwLT4xFXXaYfOzipJ9XZ5GS3Qh-S22SDg",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"not-a-uuid\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "sub is not a UUID"
+    },
+    {
+      "name": "wrong_version",
+      "receipt": "eyJ2IjoyLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAwLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9.6DNEaLpy_3u6HZJ2TtTKBCVTGWKvq42klAA8qoh44fHiLvVzGimvWldOvVzKRMtxjgo37XhWlYTJa9Ts8R5MDw",
+      "payload": "{\"v\":2,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "v is 2"
+    },
+    {
+      "name": "wrong_purpose",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZSIsInN1YiI6IjNmMmM5YzhlLTVhMWItNGQ3ZS05YzNhLTFiMmQzZTRmNWE2YiIsImF1ZCI6WyJ0cmFjay13ZWIiLCJub3RlLXdlYiJdLCJpYXQiOjE3OTA2NDAwMDAsImV4cCI6MTc5MDY0MDYwMCwianRpIjoiNWY4ZTJkN2M0YjFhMDlmOGU3ZDZjNWI0YTM5MjgxNzAifQ.8Uqp7qFwAn0eAvuZG6J1me6E6ensDs8Z9C0kOfLLPUV0ZzKpNa32mHOGu10ru-__av2Horf_eMq4tCGvm_InBA",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "purpose is not pingolin.erasure_receipt"
+    },
+    {
+      "name": "lifetime_over_600",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAxLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9.yIkYxMitBg8asPpNkcHcs4PFuLZTUNwzhWwx4Rhka4YZBJrPKCzYuqFRWzXdZ-eYFMDIM-AuMkJZIxffglMNDw",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640601,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "exp - iat is 601"
+    },
+    {
+      "name": "iat_in_the_future",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDM2MSwiZXhwIjoxNzkwNjQwOTYxLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9._JpZMEYpfez8bTDMJo2U29It4toQAaUXG8RLwUwAkhQHac6-RHQBoNgSUgv24xPY1JJ2McszEDwuIZRhxynUAQ",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640361,\"exp\":1790640961,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "iat is 301 s after verify_at"
+    },
+    {
+      "name": "no_context_prefix",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAwLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9.GE5OMVwnsNZcwdlzMsl8tcdFL8opLj1sxxTCAPPRMLhUrLDg3shlliMfGrBccgA1Gg93AE6ZUz1MpfUlpUr-Dg",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "signed over the payload alone"
+    },
+    {
+      "name": "non_canonical_s",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAwLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9.1sdgrJ6-OePhJK7_qdNMRg8uaQ8lIHev7rde4ek4BaJ_7aMT_YsYAl_8AIE61rExY2Qc8kTdnGWs4oQYlM0bHQ",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "S + L: not a strict signature"
+    },
+    {
+      "name": "padded",
+      "receipt": "eyJ2IjoxLCJwdXJwb3NlIjoicGluZ29saW4uZXJhc3VyZV9yZWNlaXB0Iiwic3ViIjoiM2YyYzljOGUtNWExYi00ZDdlLTljM2EtMWIyZDNlNGY1YTZiIiwiYXVkIjpbInRyYWNrLXdlYiIsIm5vdGUtd2ViIl0sImlhdCI6MTc5MDY0MDAwMCwiZXhwIjoxNzkwNjQwNjAwLCJqdGkiOiI1ZjhlMmQ3YzRiMWEwOWY4ZTdkNmM1YjRhMzkyODE3MCJ9.1sdgrJ6-OePhJK7_qdNMRg8uaQ8lIHev7rde4ek4BaKSGa624igGqohfCd5b3NIcY2Qc8kTdnGWs4oQYlM0bDQ=",
+      "payload": "{\"v\":1,\"purpose\":\"pingolin.erasure_receipt\",\"sub\":\"3f2c9c8e-5a1b-4d7e-9c3a-1b2d3e4f5a6b\",\"aud\":[\"track-web\",\"note-web\"],\"iat\":1790640000,\"exp\":1790640600,\"jti\":\"5f8e2d7c4b1a09f8e7d6c5b4a3928170\"}",
+      "expect": {
+        "track-web": "refuse",
+        "note-web": "refuse"
+      },
+      "why": "base64url padding on the signature"
+    }
+  ]
+}

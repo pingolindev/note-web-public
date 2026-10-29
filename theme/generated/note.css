@@ -1,0 +1,157 @@
+/* Auto-generated from the design tokens — do not edit manually */
+/* App: note */
+
+:root {
+  /* Surfaces */
+  --bg-primary: #fafafa;
+  --bg-secondary: #f0f0f4;
+  --bg-hover: #e8e8ec;
+  --surface-container: #ffffff;
+  --surface-container-high: #f5f5f8;
+  --card-bg: #ffffff;
+
+  /* Text */
+  --text-primary: #1a1a2e;
+  --text-secondary: #555566;
+  --text-muted: #666677;
+
+  /* Border / outline */
+  --border-color: rgba(0, 0, 0, 0.1);
+  --outline: #84848f;
+  --outline-variant: #cac4d8;
+
+  /* Accent */
+  --accent-color: #5d49d6;
+  --accent-hover: #5641c4;
+  --accent-rgb: 93, 73, 214;
+  --on-primary: #ffffff;
+
+  /* Semantic status */
+  --error: #e53935;
+  --on-error: #ffffff;
+  --error-container: #ffebe9;
+  --on-error-container: #7f1d1d;
+  --error-text: #b71c1c;
+  --success: #10b981;
+  --success-text: #0a6e51;
+  --on-success: #022c1f;
+  --success-container: #d1fae5;
+  --warning: #f59e0b;
+  --warning-container: #fef3c7;
+  --warning-text: #8a5a00;
+  --status-online: #2b7130;
+  --status-offline: #6e6e6e;
+
+  /* Elevation */
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.18);
+  --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.15);
+
+  /* Typography */
+  --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Spacing scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+
+  /* Radius scale */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+}
+
+.dark,
+[data-theme="dark"] {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #252542;
+  --bg-hover: #2f2f52;
+  --surface-container: #1e1e32;
+  --surface-container-high: #2d2d48;
+  --card-bg: #1e1e32;
+  --text-primary: #f0f0f5;
+  --text-secondary: #a0a0b8;
+  --text-muted: #9d9db5;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --outline: #7d7d94;
+  --outline-variant: #49455a;
+  --accent-color: #a08aff;
+  --accent-hover: #7c6cff;
+  --on-primary: #1a1040;
+  --error: #f87171;
+  --on-error: #7f1d1d;
+  --error-container: #991b1b;
+  --on-error-container: #fecaca;
+  --error-text: #f87171;
+  --success: #34d399;
+  --success-text: #34d399;
+  --on-success: #022c1f;
+  --success-container: #065f46;
+  --warning: #fbbf24;
+  --warning-container: #78350f;
+  --warning-text: #fbbf24;
+  --status-online: #66bb6a;
+  --status-offline: #757575;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.light) {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #252542;
+    --bg-hover: #2f2f52;
+    --surface-container: #1e1e32;
+    --surface-container-high: #2d2d48;
+    --card-bg: #1e1e32;
+    --text-primary: #f0f0f5;
+    --text-secondary: #a0a0b8;
+    --text-muted: #9d9db5;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --outline: #7d7d94;
+    --outline-variant: #49455a;
+    --accent-color: #a08aff;
+    --accent-hover: #7c6cff;
+    --on-primary: #1a1040;
+    --error: #f87171;
+    --on-error: #7f1d1d;
+    --error-container: #991b1b;
+    --on-error-container: #fecaca;
+    --error-text: #f87171;
+    --success: #34d399;
+    --success-text: #34d399;
+    --on-success: #022c1f;
+    --success-container: #065f46;
+    --warning: #fbbf24;
+    --warning-container: #78350f;
+    --warning-text: #fbbf24;
+    --status-online: #66bb6a;
+    --status-offline: #757575;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+    --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+}
+
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+code, pre, kbd, samp {
+  font-family: var(--font-mono);
+}
