@@ -78,11 +78,12 @@ export interface CachedSession {
   registration_status?: string;
   guardian_managed?: boolean;
   /**
-   * Entitlements as of the last confirmation. Cached so a paying user going
-   * offline does not read as free — which would hide features they paid for
-   * and show upgrade prompts. Opaque here to keep this module free of store
-   * imports; the caller owns the shape.
+   * The products held as of the last confirmation (`entitled_products`).
+   * Cached so a paying user going offline does not read as free — which would
+   * hide features they paid for and show upgrade prompts.
    */
+  entitled_products?: string[];
+  /** What older builds cached in its place. Read for the plan, never written. */
   subscriptions?: unknown[];
   /** The account's registered public keys (standard base64) as of the last
    *  confirmation: the offline resume checks the tab's keys against them. */

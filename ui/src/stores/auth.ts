@@ -67,19 +67,11 @@ import {
   tryCanonicalAccountId,
 } from '../lib/account';
 
-interface SubscriptionInfo {
-  service: string;
-  plan: string;
-  status: string;
-  product_slug?: string;
-  /** "individual" or "bundle" — a bundle entitles the user to all products. */
-  subscription_type?: string;
-}
-
 interface User {
   id: string;
   email: string;
-  subscriptions?: SubscriptionInfo[];
+  /** The products this account holds now: `entitled_products` of /auth/me. */
+  entitled_products?: string[];
   /** 'approved' | 'pending' (an account awaiting admin approval) | 'rejected' */
   registration_status?: string;
   /** True when somebody else set this account up and keeps its password — a
@@ -211,23 +203,65 @@ export function getAccountUrl(): string {
   return getAccountOrigin() ?? getAuthUiUrl();
 }
 
+/** Note's product slug, as the note server asks auth about it. */
+const NOTE_PRODUCT = 'note';
+
 /**
- * Returns 'Premium' if the user has an active subscription that entitles
- * them to note features (product_slug === 'note' or subscription_type ===
- * 'bundle'). A track-only subscription does not grant note features, so
- * this badge matches the note server's quota check exactly — otherwise the
- * UI would advertise Premium and the server would reject reminders/sharing
- * with 402.
+ * 'Premium' if auth says this account holds Note, else 'Free': a package with
+ * Note in it counts whichever product came first, a track-only plan does not,
+ * and a renewal in past_due still does. `entitled_products` answers from the
+ * same rule as the note server's quota check, so this badge disagrees with it
+ * only while the server's cache lags. Worked out here from `subscriptions` it
+ * disagreed for good, and the UI advertised Free to accounts the server serves.
  */
-const subscriptionTier = () => {
+const subscriptionTier = () => (user()?.entitled_products?.includes(NOTE_PRODUCT) ? 'Premium' : 'Free');
+
+/**
+ * The newest open-tab re-check. The timer, the tab coming into view and the iOS
+ * app can each ask while another is on its way, and an answer that lands late
+ * must not put back the plan an earlier moment had.
+ */
+let recheckAsked = 0;
+
+/** The product list in an /auth/me answer, or null if it does not state one. */
+function entitledProductsOf(data: { entitled_products?: unknown } | undefined): string[] | null {
+  const list = data?.entitled_products;
+  return Array.isArray(list) && list.every(p => typeof p === 'string') ? list : null;
+}
+
+/**
+ * The plan in a session cached before `entitled_products` was: only the rows,
+ * read as those builds read them. The next confirmed session replaces it.
+ */
+function entitledInOldCache(rows: unknown[] | undefined): string[] {
+  const held = (rows ?? []) as { status?: string; product_slug?: string }[];
+  return held.some(s => (s.status === 'active' || s.status === 'trialing') && s.product_slug === NOTE_PRODUCT)
+    ? [NOTE_PRODUCT]
+    : [];
+}
+
+/**
+ * Take the plan from an /auth/me this tab already made, for this account.
+ *
+ * checkAuth runs once per page and a plan changes under an open page: the App
+ * Store sheet the iOS shell opens over this one, the portal in another tab, a
+ * renewal that fails. Nothing tells the page, so every answer it gets anyway
+ * carries the plan in. The offline trust window (`verifiedAt`) is left alone:
+ * this says what the account holds, not that the session was confirmed.
+ */
+function adoptPlan(answer: { id?: unknown; entitled_products?: unknown } | undefined): void {
   const u = user();
-  if (!u?.subscriptions?.length) return 'Free';
-  const entitled = u.subscriptions.some(s =>
-    (s.status === 'active' || s.status === 'trialing') &&
-    (s.product_slug === 'note' || s.subscription_type === 'bundle')
-  );
-  return entitled ? 'Premium' : 'Free';
-};
+  const entitled = entitledProductsOf(answer);
+  if (!u || !entitled || tryCanonicalAccountId(answer?.id) !== u.id) return;
+  const held = u.entitled_products;
+  if (held?.length === entitled.length && held.every((p, i) => p === entitled[i])) return;
+  setUser({ ...u, entitled_products: entitled });
+  const cached = readCachedSession();
+  if (cached?.id !== u.id) return;
+  try {
+    localStorage.setItem(SESSION_KEY_NAME, JSON.stringify({ ...cached, entitled_products: entitled }));
+  } catch { /* non-fatal */ }
+}
 
 /**
  * Read the wrapping key the account portal handed us in the redirect
@@ -505,7 +539,7 @@ function writeCachedSession(
       email: u.email,
       registration_status: u.registration_status,
       guardian_managed: u.guardian_managed,
-      subscriptions: u.subscriptions,
+      entitled_products: u.entitled_products,
       sharing_public_key: keys.sharing_public_key,
       signing_public_key: keys.signing_public_key,
       verifiedAt: nowMs,
@@ -549,7 +583,7 @@ async function resumeFromCache(): Promise<boolean> {
   setUser({
     id: accountId,
     email: s.email,
-    subscriptions: s.subscriptions as User['subscriptions'],
+    entitled_products: s.entitled_products ?? entitledInOldCache(s.subscriptions),
     registration_status: s.registration_status,
     guardian_managed: s.guardian_managed,
   });
@@ -610,6 +644,7 @@ async function wipeLocalUserData(): Promise<void> {
 export const authStore = {
   user,
   subscriptionTier,
+  adoptPlan,
   isAuthenticated: () => isLoggedIn(),
 
   // Account still awaiting admin approval. While pending the app shows only
@@ -660,12 +695,14 @@ export const authStore = {
    * reset elsewhere), stops the tab: wipe, then reload. A definite sign-out
    * runs the usual wipe. A network failure proves nothing and is left for
    * the next check. Called on coming into view and on a timer; the account
-   * header on every request is what stops a hidden tab in between.
+   * header on every request is what stops a hidden tab in between. The same
+   * answer brings a changed plan to an open page (adoptPlan).
    */
   async recheckAccount(): Promise<void> {
     const acct = getTabAccount();
     const keys = expectedAccount();
     if (!acct || !keys || isOffline()) return;
+    const asked = ++recheckAsked;
     let response: Response;
     try {
       response = await accountFetch(`${API_URL}/auth/me`, { credentials: 'include' });
@@ -681,18 +718,28 @@ export const authStore = {
       return;
     }
     if (!response.ok) return;
-    let body: { data?: { id?: unknown; sharing_public_key?: string | null; signing_public_key?: string | null } };
+    let body: {
+      data?: {
+        id?: unknown;
+        sharing_public_key?: string | null;
+        signing_public_key?: string | null;
+        entitled_products?: unknown;
+      };
+    };
     try {
       body = await response.json();
     } catch {
       return;
     }
+    if (asked !== recheckAsked) return;
     const id = tryCanonicalAccountId(body?.data?.id);
     const now = id ? accountKeysFrom(id, body.data?.sharing_public_key, body.data?.signing_public_key) : null;
     if (!now || now.id !== acct || !sameAccountKeys(now, keys)) {
       console.warn('[Note] this tab no longer matches the signed-in account — reloading');
       reportAccountMismatch();
+      return;
     }
+    adoptPlan(body.data);
   },
 
   async checkAuth() {
@@ -801,7 +848,7 @@ export const authStore = {
         accountId, userData.data.sharing_public_key, userData.data.signing_public_key,
       ));
 
-      const confirmed: User = { id: accountId, email: userData.data.email, subscriptions: userData.data.subscriptions, registration_status: userData.data.registration_status, guardian_managed: userData.data.guardian_managed };
+      const confirmed: User = { id: accountId, email: userData.data.email, entitled_products: entitledProductsOf(userData.data) ?? undefined, registration_status: userData.data.registration_status, guardian_managed: userData.data.guardian_managed };
       setUser(confirmed);
       setIsLoggedIn(true);
       // Re-arm push for this account. Sign-out unsubscribes (above), and the

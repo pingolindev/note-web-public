@@ -20,7 +20,7 @@ import { Component, createSignal, createEffect, createMemo, on, onMount, onClean
 import { collabKeyFor, NoteItem, notesStore, openedWith, ownsSharedCache } from '../stores/notes';
 import { apiRequest } from '../lib/apiClient';
 import SharePanel from './SharePanel';
-import NoteEditor, { type EditorHandle } from './NoteEditor';
+import NoteEditor, { type ActiveEditorStyles, type EditorHandle } from './NoteEditor';
 import LabelEditor from './LabelEditor';
 import ColorPicker from './ColorPicker';
 import { settingsStore, type EditorMode } from '../stores/settings';
@@ -106,7 +106,11 @@ const NoteModal: Component<Props> = (props) => {
   };
 
   const [title, setTitle] = createSignal(props.note.title);
-  const [fmtActive, setFmtActive] = createSignal({ bold: false, italic: false, strike: false, code: false });
+  const [fmtActive, setFmtActive] = createSignal<ActiveEditorStyles>({
+    bold: false, italic: false, strike: false, code: false,
+    bullet: false, ordered: false, checklist: false, quote: false, heading: false,
+    codeBlock: false, link: false,
+  });
   const [body, setBody] = createSignal(props.note.body);
   const [saving, setSaving] = createSignal(false);
   const [dirty, setDirty] = createSignal(false);
@@ -776,27 +780,27 @@ const NoteModal: Component<Props> = (props) => {
             <code style="font-size:12px">&lt;/&gt;</code>
           </button>
           <span class="fmt-sep" />
-          <button class="fmt-btn" onClick={() => editorHandle?.insertLinePrefix('- ')} title="Bullet list">
+          <button class="fmt-btn" classList={{ 'fmt-active': fmtActive().bullet }} aria-pressed={fmtActive().bullet} onClick={() => editorHandle?.toggleLinePrefix('bullet')} title="Bullet list">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg>
           </button>
-          <button class="fmt-btn" onClick={() => editorHandle?.insertLinePrefix('1. ')} title="Numbered list">
+          <button class="fmt-btn" classList={{ 'fmt-active': fmtActive().ordered }} aria-pressed={fmtActive().ordered} onClick={() => editorHandle?.toggleLinePrefix('ordered')} title="Numbered list">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="2" y="8" font-size="8" fill="currentColor" stroke="none">1</text><text x="2" y="14" font-size="8" fill="currentColor" stroke="none">2</text><text x="2" y="20" font-size="8" fill="currentColor" stroke="none">3</text></svg>
           </button>
-          <button class="fmt-btn" onClick={() => editorHandle?.insertLinePrefix('- [ ] ')} title="Checklist">
+          <button class="fmt-btn" classList={{ 'fmt-active': fmtActive().checklist }} aria-pressed={fmtActive().checklist} onClick={() => editorHandle?.toggleLinePrefix('checklist')} title="Checklist">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M5 8l1.5 1.5L9 6"/><line x1="13" y1="8" x2="21" y2="8"/><rect x="3" y="13" width="6" height="6" rx="1"/><line x1="13" y1="16" x2="21" y2="16"/></svg>
           </button>
-          <button class="fmt-btn" onClick={() => editorHandle?.insertBlock('```\n', '\n```')} title="Code block">
+          <button class="fmt-btn" classList={{ 'fmt-active': fmtActive().codeBlock }} aria-pressed={fmtActive().codeBlock} onClick={() => editorHandle?.toggleCodeBlock()} title="Code block">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
           </button>
           <span class="fmt-sep" />
-          <button class="fmt-btn" onClick={() => editorHandle?.cycleHeading()} title="Heading (click again for the next level)">H</button>
-          <button class="fmt-btn" onClick={() => editorHandle?.insertLink()} title="Link">
+          <button class="fmt-btn" classList={{ 'fmt-active': fmtActive().heading }} aria-pressed={fmtActive().heading} onClick={() => editorHandle?.cycleHeading()} title="Heading (click again for the next level)">H</button>
+          <button class="fmt-btn" classList={{ 'fmt-active': fmtActive().link }} aria-pressed={fmtActive().link} onClick={() => editorHandle?.insertLink()} title="Link">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           </button>
           <button class="fmt-btn" onClick={() => editorHandle?.insertDivider()} title="Divider">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/></svg>
           </button>
-          <button class="fmt-btn" onClick={() => editorHandle?.insertLinePrefix('> ')} title="Quote">
+          <button class="fmt-btn" classList={{ 'fmt-active': fmtActive().quote }} aria-pressed={fmtActive().quote} onClick={() => editorHandle?.toggleLinePrefix('quote')} title="Quote">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z"/></svg>
           </button>
         </div>

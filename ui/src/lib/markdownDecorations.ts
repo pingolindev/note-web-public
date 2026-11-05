@@ -298,6 +298,15 @@ export const blockScanCache: { doc: EditorState['doc'] | null; scan: BlockScan |
   scan: null,
 };
 
+/** The block structure of `doc`, from the cache while the document has not changed. */
+export function blockScanOf(doc: EditorState['doc']): BlockScan {
+  if (blockScanCache.doc === doc && blockScanCache.scan) return blockScanCache.scan;
+  const scan = scanBlocks(doc);
+  blockScanCache.doc = doc;
+  blockScanCache.scan = scan;
+  return scan;
+}
+
 /**
  * The subset of [buildDecorations]'s output the CURSOR must treat as a unit:
  * the hidden marker runs (a caret inside one is invisible, and backspace
@@ -381,13 +390,7 @@ export function buildDecorations(view: EditorView, mode: EditorMode): Decoration
   // syntax on the cursor's line — but the block scan does not depend on the
   // cursor, and re-walking the whole document per keypress makes cursor
   // movement lag on a long note.
-  let scan = blockScanCache.doc === doc ? blockScanCache.scan : null;
-  if (!scan) {
-    scan = scanBlocks(doc);
-    blockScanCache.doc = doc;
-    blockScanCache.scan = scan;
-  }
-  const { codeBlockLines, codeBlockRanges, mathBlockLines, mathBlockRanges, calloutLines } = scan;
+  const { codeBlockLines, codeBlockRanges, mathBlockLines, mathBlockRanges, calloutLines } = blockScanOf(doc);
 
   // Is the cursor inside a code block? If so, reveal that block's fences
   const cursorInCodeBlock = revealCursorLine ? codeBlockRanges.find(

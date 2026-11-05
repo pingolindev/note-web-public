@@ -17,7 +17,7 @@
  */
 
 import { shellSave, shellSaveAvailable } from '../lib/shellSave';
-import { Component, createSignal, onMount, onCleanup, For, Match, Show, Switch } from 'solid-js';
+import { Component, createEffect, createMemo, createSignal, on, onMount, onCleanup, For, Match, Show, Switch } from 'solid-js';
 import ExportDialog from './ExportDialog';
 import { buildInfo } from '../lib/buildInfo';
 import ImportDialog from './ImportDialog';
@@ -57,6 +57,9 @@ interface QuotaUsage {
  *  /api/v1/notifications/preferences). Plain booleans with documented
  *  defaults — push on, email off — so a partial PUT of just the flipped
  *  field is the intended shape. */
+/** How often the panel asks again while it says Note is catching up. */
+const TIER_SYNC_RECHECK_MS = 15_000;
+
 interface NotificationPrefs {
   reminders_push: boolean;
   shared_notes_push: boolean;
@@ -94,26 +97,49 @@ const SettingsPanel: Component<Props> = (props) => {
   const [blocksRead, setBlocksRead] = createSignal<BlockedListRead>('loading');
 
   /**
-   * ONE source for the plan this panel describes: the account's
-   * subscriptions, and this is the only place the tier is stated at all.
+   * ONE source for the plan this panel describes: what auth says the account
+   * holds, and this is the only place the tier is stated at all.
    * Keying the plan row off the quota fetch's `tier` instead would, while
    * that request is pending or failed, render "Pingolin Note — Free" with
    * an Upgrade button for a paying customer. A missing answer is not a
    * free tier; it is "not loaded yet".
    */
   const isPaid = () => authStore.subscriptionTier() === 'Premium';
-  /** The note server caches the tier for up to 30 minutes, so right after a
-   *  plan change its quota answer can lag the account. Say so instead of
-   *  presenting two tiers at once. */
-  const tierSyncing = () => {
+  /** The note server keeps a copy of the tier: seconds on a pod, five minutes
+   *  at most if an invalidation is lost (quota.rs). So right after a plan
+   *  change its quota answer can lag the account. Say so instead of presenting
+   *  two tiers at once. */
+  const tierSyncing = createMemo(() => {
     const q = quota();
     if (!q) return false;
     return (q.tier === 'paid') !== isPaid();
+  });
+
+  /** A later read wins over one still on its way. A read that fails keeps what
+   *  an earlier one showed: a usage that was loaded is still the best answer. */
+  let quotaRead = 0;
+  const loadQuota = async () => {
+    const mine = ++quotaRead;
+    const q = await apiRequest<QuotaUsage>('/api/v1/quota');
+    if (mine !== quotaRead) return;
+    if (q.success) { setQuota(q.data); setQuotaState('ok'); } else if (!quota()) { setQuotaState('error'); }
   };
+
+  // The plan changes under this panel: Upgrade's App Store sheet opens over it.
+  createEffect(on(isPaid, () => void loadQuota(), { defer: true }));
+
+  // The line says Note is catching up, so it has to go once Note has, with
+  // nobody reopening the panel to find out.
+  createEffect(() => {
+    if (!tierSyncing()) return;
+    const timer = setInterval(() => void loadQuota(), TIER_SYNC_RECHECK_MS);
+    onCleanup(() => clearInterval(timer));
+  });
 
   onMount(async () => {
     const result = await apiRequest<any>('/api/v1/auth/me');
     if (result.success) {
+      authStore.adoptPlan(result.data);
       const name = result.data.display_name || '';
       setDisplayName(name);
       setOriginalName(name);
@@ -129,8 +155,7 @@ const SettingsPanel: Component<Props> = (props) => {
     const np = await apiRequest<NotificationPrefs>('/api/v1/notifications/preferences');
     if (np.success) setPrefs(np.data);
     // Fetch usage for the plan/usage bars, as the Android and iOS apps do.
-    const q = await apiRequest<QuotaUsage>('/api/v1/quota');
-    if (q.success) { setQuota(q.data); setQuotaState('ok'); } else { setQuotaState('error'); }
+    await loadQuota();
     // Blocked senders (for the management section below). A list that could
     // not be read is not an empty one: the section says which it is.
     const listed = await sharesInboxStore.listBlocks();
@@ -569,7 +594,7 @@ const SettingsPanel: Component<Props> = (props) => {
           </p>
           <Show when={tierSyncing()}>
             <p class="settings-check-desc" data-testid="plan-syncing">
-              Your plan changed recently. Note is still catching up, which can take up to 30 minutes; sharing and reminders follow once it has.
+              Your plan changed recently. Note is still catching up, which can take a few minutes.
             </p>
           </Show>
         </div>

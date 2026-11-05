@@ -105,8 +105,10 @@ const codeHighlightStyle = HighlightStyle.define([
 
 export interface EditorHandle {
   wrapSelection: (before: string, after: string) => void;
-  insertLinePrefix: (prefix: string) => void;
-  insertBlock: (before: string, after: string) => void;
+  /** Toggle or replace a block style on the caret's line. */
+  toggleLinePrefix: (kind: LinePrefixKind) => void;
+  /** Open a fenced code block, or close an empty one without nesting fences. */
+  toggleCodeBlock: () => void;
   /** Step the caret line's heading level 1→2→…→6→none→1. */
   cycleHeading: () => void;
   /** Put a `---` thematic break on its own line below the caret. */
@@ -121,6 +123,11 @@ export interface EditorHandle {
   setContent: (text: string) => void;
 }
 
+export type ActiveEditorStyles = ActiveInlineStyles & ActiveLinePrefixStyles & {
+  codeBlock: boolean;
+  link: boolean;
+};
+
 interface Props {
   value: string;
   onChange: (value: string) => void;
@@ -130,9 +137,9 @@ interface Props {
   noteId?: string;
   placeholder?: string;
   onReady?: (handle: EditorHandle) => void;
-  /** Fired when the caret's active inline styles change — drives the
+  /** Fired when the caret's active inline or block styles change — drives the
    *  toolbar's pressed-state highlighting. */
-  onStylesChange?: (styles: ActiveInlineStyles) => void;
+  onStylesChange?: (styles: ActiveEditorStyles) => void;
   /** When provided, bind editor text to this Y.Text via y-codemirror.next. */
   yText?: import('yjs').Text;
   /** y-protocols/awareness instance for presence. Optional. */
@@ -144,12 +151,75 @@ interface Props {
 // Decoration logic lives in lib/markdownDecorations.ts so it can be unit
 // tested — see the note at the top of that file.
 import {
-  MathWidget, movedLine, blockScanCache, buildDecorations, atomicRangesOf, visibleCharsBetween, caretSnapAnchor,
+  MathWidget, movedLine, blockScanCache, blockScanOf, buildDecorations, atomicRangesOf, visibleCharsBetween, caretSnapAnchor,
 } from '../lib/markdownDecorations';
 import { toggleInlineMarker, activeInlineStyles, pendingExitField, pendingExitEffect, type ActiveInlineStyles } from '../lib/inlineToggle';
+import { touchesMarkdownLink } from '../lib/blockToolbar';
+import {
+  activeLinePrefixStyles,
+  cycleHeadingEdit,
+  mapLinePrefixPosition,
+  toggleLinePrefix,
+  type ActiveLinePrefixStyles,
+  type LinePrefixEdit,
+  type LinePrefixKind,
+} from '../lib/linePrefix';
 import { typedMarkerField } from '../lib/typedMarker';
 import { closingFenceDedupSpec } from '../lib/fenceDedup';
 import { previewBackspaceSpec, imeVisibleRemapSpec, misplacedInsertSpec, bulletFlipGuardSpec, newlineSplitGuardSpec, onlyHiddenBetween } from '../lib/previewBackspace';
+
+// --- Toolbar state ---
+
+/** Inside a code or math block a line is literal text: nothing in it is a marker. */
+function isLiteralLine(doc: EditorState['doc'], lineNumber: number): boolean {
+  const scan = blockScanOf(doc);
+  return scan.codeBlockLines.has(lineNumber) || scan.mathBlockLines.has(lineNumber);
+}
+
+/**
+ * Apply a block style to the head's line, carrying both ends of the selection
+ * with it. On a literal line a press changes nothing: a line style means nothing
+ * there, and it could only eat a `#`, stack markers or break a fence.
+ */
+function applyLineEdit(view: EditorView, edit: (lineText: string) => LinePrefixEdit): void {
+  const { anchor, head } = view.state.selection.main;
+  const line = view.state.doc.lineAt(head);
+  if (!isLiteralLine(view.state.doc, line.number)) {
+    const change = edit(line.text);
+    view.dispatch({
+      changes: { from: line.from + change.from, to: line.from + change.to, insert: change.insert },
+      selection: {
+        anchor: mapLinePrefixPosition(change, line.from, anchor),
+        head: mapLinePrefixPosition(change, line.from, head),
+      },
+      userEvent: 'input.format',
+    });
+  }
+  view.focus();
+}
+
+/** What the toolbar shows for `state`: the caret's inline styles and its line's block styles. */
+function activeEditorStyles(state: EditorState): ActiveEditorStyles {
+  const selection = state.selection.main;
+  const exitAt = state.field(pendingExitField, false) ?? null;
+  const inlineStyles = exitAt !== null
+    ? activeInlineStyles(
+        selection.empty && Math.abs(selection.head - exitAt) <= 4
+          ? EditorState.create({ doc: state.doc, selection: { anchor: exitAt } })
+          : state)
+    : activeInlineStyles(state);
+  const line = state.doc.lineAt(selection.head);
+  const fromLine = state.doc.lineAt(selection.from);
+  const toLine = state.doc.lineAt(selection.to);
+  return {
+    ...inlineStyles,
+    ...activeLinePrefixStyles(isLiteralLine(state.doc, line.number) ? '' : line.text),
+    codeBlock: blockScanOf(state.doc).codeBlockLines.has(line.number),
+    // The same test `insertLink` makes, so a lit button means a press is refused.
+    link: fromLine.number === toLine.number
+      && touchesMarkdownLink(fromLine.text, selection.from - fromLine.from, selection.to - fromLine.from),
+  };
+}
 
 // --- Table helpers ---
 // A pipe-table row is a line that starts and ends with `|` once trimmed.
@@ -695,6 +765,10 @@ const NoteEditor: Component<Props> = (props) => {
           if (!tr.docChanged) return tr;
           if (tr.startState.field(editorModeField) !== 'preview') return tr;
           if (!tr.startState.selection.main.empty) return tr;
+          // A toolbar toggle-off is a bare deletion ending at the caret, the
+          // very shape the gate below reads as a Backspace. It is a deliberate
+          // marker edit, and it already says exactly what to remove.
+          if (tr.isUserEvent('input.format')) return tr;
           // Not only `delete.backward`: Gboard's deletes — especially around
           // an active composition — reach CodeMirror as DOM-diff edits that
           // classify as generic input, not as the delete command. Gate on the
@@ -1024,13 +1098,7 @@ const NoteEditor: Component<Props> = (props) => {
             props.onChange(update.state.doc.toString());
           }
           if (props.onStylesChange && (update.selectionSet || update.docChanged)) {
-            const exitAt = update.state.field(pendingExitField, false) ?? null;
-            props.onStylesChange(exitAt !== null
-              ? activeInlineStyles(
-                  update.state.selection.main.empty && Math.abs(update.state.selection.main.head - exitAt) <= 4
-                    ? EditorState.create({ doc: update.state.doc, selection: { anchor: exitAt } })
-                    : update.state)
-              : activeInlineStyles(update.state));
+            props.onStylesChange(activeEditorStyles(update.state));
           }
         }),
         EditorView.lineWrapping,
@@ -1063,6 +1131,10 @@ const NoteEditor: Component<Props> = (props) => {
     });
 
     view = new EditorView({ state, parent: containerRef });
+    // The listener above reports changes, and a new editor has had none. Its
+    // toolbar would go on showing the last editor's state, as the composer's
+    // does after a Discard, and a note opening on a heading would show none.
+    props.onStylesChange?.(activeEditorStyles(view.state));
 
     // Effect, not a one-shot: the collab session opens AFTER first render
     // (NoteModal assigns it in a post-render effect), so props.yText is
@@ -1096,24 +1168,47 @@ const NoteEditor: Component<Props> = (props) => {
         // The same function `Mod-b` / `Mod-i` run, hoisted above onMount so
         // the button and the shortcut cannot diverge.
         wrapSelection,
-        insertLinePrefix(prefix: string) {
+        toggleLinePrefix(kind: LinePrefixKind) {
           if (!view) return;
-          const { head } = view.state.selection.main;
-          const line = view.state.doc.lineAt(head);
-          view.dispatch({
-            changes: { from: line.from, to: line.from, insert: prefix },
-            selection: { anchor: line.from + prefix.length },
-          });
-          view.focus();
+          settleComposition();
+          applyLineEdit(view, lineText => toggleLinePrefix(lineText, kind));
         },
-        insertBlock(before: string, after: string) {
+        toggleCodeBlock() {
           if (!view) return;
           settleComposition();
           const { from, to } = view.state.selection.main;
           const selected = view.state.sliceDoc(from, to);
+          const firstLine = view.state.doc.lineAt(from).number;
+          const lastLine = view.state.doc.lineAt(to).number;
+          const scan = blockScanOf(view.state.doc);
+          const block = scan.codeBlockRanges.find(
+            range => firstLine <= range.end && lastLine >= range.start,
+          );
+          if (block) {
+            const open = view.state.doc.line(block.start);
+            const close = view.state.doc.line(block.end);
+            const body = view.state.doc.sliceString(open.to, close.from);
+            if (from === to && body.trim() === '') {
+              const removeTo = close.to < view.state.doc.length ? close.to + 1 : close.to;
+              view.dispatch({
+                changes: { from: open.from, to: removeTo, insert: '' },
+                selection: { anchor: open.from },
+                userEvent: 'input.format',
+              });
+            }
+            view.focus();
+            return;
+          }
+          // A fence with no closing line runs to the end of the note, and a new
+          // fence here would close it and open another under everything below.
+          if (scan.codeBlockLines.has(firstLine) || scan.codeBlockLines.has(lastLine)) {
+            view.focus();
+            return;
+          }
           view.dispatch({
-            changes: { from, to, insert: before + selected + after },
-            selection: { anchor: from + before.length },
+            changes: { from, to, insert: '```\n' + selected + '\n```' },
+            selection: { anchor: from + 4 },
+            userEvent: 'input.format',
           });
           view.focus();
         },
@@ -1125,18 +1220,8 @@ const NoteEditor: Component<Props> = (props) => {
          */
         cycleHeading() {
           if (!view) return;
-          const { head } = view.state.selection.main;
-          const line = view.state.doc.lineAt(head);
-          const m = line.text.match(/^(#{1,6}) /);
-          const level = m ? m[1].length : 0;
-          const next = level >= 6 ? 0 : level + 1;
-          const prefix = next === 0 ? '' : '#'.repeat(next) + ' ';
-          const oldLen = m ? m[0].length : 0;
-          view.dispatch({
-            changes: { from: line.from, to: line.from + oldLen, insert: prefix },
-            selection: { anchor: Math.max(line.from + prefix.length, head + prefix.length - oldLen) },
-          });
-          view.focus();
+          settleComposition();
+          applyLineEdit(view, cycleHeadingEdit);
         },
         /**
          * A thematic break has to be alone on its line, so this never
@@ -1163,7 +1248,17 @@ const NoteEditor: Component<Props> = (props) => {
          */
         insertLink() {
           if (!view) return;
+          settleComposition();
           const { from, to } = view.state.selection.main;
+          const fromLine = view.state.doc.lineAt(from);
+          const toLine = view.state.doc.lineAt(to);
+          if (
+            fromLine.number === toLine.number
+            && touchesMarkdownLink(fromLine.text, from - fromLine.from, to - fromLine.from)
+          ) {
+            view.focus();
+            return;
+          }
           const selected = view.state.sliceDoc(from, to);
           const label = selected || 'link';
           const url = 'https://';
@@ -1177,6 +1272,7 @@ const NoteEditor: Component<Props> = (props) => {
           view.dispatch({
             changes: { from, to, insert: text },
             selection: { anchor: selFrom, head: selFrom + selLen },
+            userEvent: 'input.format',
           });
           view.focus();
         },

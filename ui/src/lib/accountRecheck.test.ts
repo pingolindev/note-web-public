@@ -17,18 +17,22 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ACCOUNT_RECHECK_MS, startAccountRecheck } from './accountRecheck';
+import { ACCOUNT_RECHECK_MS, SHELL_ACCOUNT_EVENT, startAccountRecheck } from './accountRecheck';
 
 /** The open tab re-checks its account on coming into view and once a minute. */
 
 function fakeDocument() {
   const listeners = new Set<() => void>();
+  const shell = new Set<() => void>();
+  const of = (type: string) => (type === SHELL_ACCOUNT_EVENT ? shell : listeners);
   return {
     visibilityState: 'hidden' as DocumentVisibilityState,
-    addEventListener: (type: string, fn: () => void) => { if (type === 'visibilitychange') listeners.add(fn); },
-    removeEventListener: (type: string, fn: () => void) => { if (type === 'visibilitychange') listeners.delete(fn); },
+    addEventListener: (type: string, fn: () => void) => { of(type).add(fn); },
+    removeEventListener: (type: string, fn: () => void) => { of(type).delete(fn); },
     show(state: DocumentVisibilityState) { this.visibilityState = state; listeners.forEach(fn => fn()); },
+    shellSays() { shell.forEach(fn => fn()); },
     listeners,
+    shell,
   };
 }
 
@@ -58,14 +62,25 @@ describe('startAccountRecheck', () => {
     expect(recheck).toHaveBeenCalledTimes(1);
   });
 
-  it('stops both when stopped', () => {
+  it("re-checks at once on the iOS app's word, while the tab stays in view", () => {
+    const recheck = vi.fn();
+    const doc = fakeDocument();
+    startAccountRecheck(recheck, doc as unknown as Document);
+    doc.shellSays();
+    expect(recheck).toHaveBeenCalledTimes(1);
+    expect(SHELL_ACCOUNT_EVENT).toBe('pingolin-account');
+  });
+
+  it('stops all of them when stopped', () => {
     const recheck = vi.fn();
     const doc = fakeDocument();
     const stop = startAccountRecheck(recheck, doc as unknown as Document);
     stop();
     doc.show('visible');
+    doc.shellSays();
     vi.advanceTimersByTime(ACCOUNT_RECHECK_MS * 3);
     expect(recheck).not.toHaveBeenCalled();
     expect(doc.listeners.size).toBe(0);
+    expect(doc.shell.size).toBe(0);
   });
 });

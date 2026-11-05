@@ -17,15 +17,23 @@
  */
 
 /**
- * The open tab's account re-check: whenever the tab comes into view, and
- * once a minute. A sign-in as someone else in another tab replaces the
- * shared cookie under this one; the re-check notices and the tab reloads.
- * What stops a hidden tab's timers in between is the account header on every
- * request (lib/account.ts), not this: it only makes the reload come sooner.
+ * The open tab's account re-check: whenever the tab comes into view, once a
+ * minute, and when the app around the page says to. A sign-in as someone else
+ * in another tab replaces the shared cookie under this one; the re-check
+ * notices and the tab reloads. What stops a hidden tab's timers in between is
+ * the account header on every request (lib/account.ts), not this: it only
+ * makes the reload come sooner.
  */
 
 /** How often an open tab re-checks its account. */
 export const ACCOUNT_RECHECK_MS = 60_000;
+
+/**
+ * Sent to the document by the iOS app when its purchase sheet closes. That
+ * sheet opens over this page, so the page stays in view and only the minute
+ * timer would notice a plan bought in it.
+ */
+export const SHELL_ACCOUNT_EVENT = 'pingolin-account';
 
 /** Start re-checking; returns the stop. */
 export function startAccountRecheck(recheck: () => void, doc: Document = document): () => void {
@@ -33,9 +41,11 @@ export function startAccountRecheck(recheck: () => void, doc: Document = documen
     if (doc.visibilityState === 'visible') recheck();
   };
   doc.addEventListener('visibilitychange', onVisible);
+  doc.addEventListener(SHELL_ACCOUNT_EVENT, recheck);
   const timer = setInterval(recheck, ACCOUNT_RECHECK_MS);
   return () => {
     doc.removeEventListener('visibilitychange', onVisible);
+    doc.removeEventListener(SHELL_ACCOUNT_EVENT, recheck);
     clearInterval(timer);
   };
 }

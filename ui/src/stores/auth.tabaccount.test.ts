@@ -64,7 +64,10 @@ interface Identity {
 const identity = (): Identity => ({ box: sodium.crypto_box_keypair(), sign: sodium.crypto_sign_keypair() });
 
 /** What /auth/me answers: an account with keys, a status, or a thrown fetch. */
-type MeAnswer = { id: string; who: Identity } | { status: number; json: boolean } | 'throw';
+type MeAnswer =
+  | { id: string; who: Identity; entitled?: unknown; rows?: unknown[] }
+  | { status: number; json: boolean }
+  | 'throw';
 let meAnswer: MeAnswer;
 
 let session: Storage;
@@ -121,6 +124,8 @@ beforeEach(async () => {
           id: meAnswer.id, email: 'me@example.test',
           sharing_public_key: b64(meAnswer.who.box.publicKey),
           signing_public_key: b64(meAnswer.who.sign.publicKey),
+          ...(meAnswer.entitled === undefined ? {} : { entitled_products: meAnswer.entitled }),
+          ...(meAnswer.rows === undefined ? {} : { subscriptions: meAnswer.rows }),
         },
       });
     }
@@ -299,6 +304,147 @@ describe('the open-tab re-check', () => {
   });
 });
 
+describe('the plan', () => {
+  const cachedPlan = () => JSON.parse(local.getItem('pingolin_note_session')!).entitled_products;
+
+  async function signedInHolding(entitled: unknown, rows?: unknown[]): Promise<Identity> {
+    const me = identity();
+    keep(me);
+    meAnswer = { id: ME, who: me, entitled, rows };
+    await runCheckAuth();
+    return me;
+  }
+
+  it("is auth's list of what the account holds, and only that", async () => {
+    await signedInHolding(['note']);
+    expect(authStore.subscriptionTier()).toBe('Premium');
+    expect(cachedPlan()).toEqual(['note']);
+  });
+
+  it('a package with Note in it is Premium whichever product came first', async () => {
+    // What /auth/me sends: one row, named after the anchor product.
+    await signedInHolding(['note', 'track'], [{ status: 'active', product_slug: 'track' }]);
+    expect(authStore.subscriptionTier()).toBe('Premium');
+  });
+
+  it('a renewal in past_due is Premium, as the note server serves it', async () => {
+    await signedInHolding(['note'], [{ status: 'past_due', product_slug: 'note' }]);
+    expect(authStore.subscriptionTier()).toBe('Premium');
+  });
+
+  it('a plan for Track alone is not Note', async () => {
+    await signedInHolding(['track']);
+    expect(authStore.subscriptionTier()).toBe('Free');
+  });
+
+  it('rows with no list behind them grant nothing', async () => {
+    await signedInHolding(undefined, [{ status: 'active', product_slug: 'note' }]);
+    expect(authStore.subscriptionTier()).toBe('Free');
+  });
+
+  it('a plan bought while the tab is open arrives with the next re-check', async () => {
+    const me = await signedInHolding([]);
+    expect(authStore.subscriptionTier()).toBe('Free');
+    const { verifiedAt } = JSON.parse(local.getItem('pingolin_note_session')!);
+    vi.advanceTimersByTime(60_000);
+
+    meAnswer = { id: ME, who: me, entitled: ['note'] };
+    await authStore.recheckAccount();
+    expect(authStore.subscriptionTier()).toBe('Premium');
+    expect(reload).not.toHaveBeenCalled();
+    // An offline start sees the same plan, and the trust window has not moved.
+    expect(cachedPlan()).toEqual(['note']);
+    expect(JSON.parse(local.getItem('pingolin_note_session')!).verifiedAt).toBe(verifiedAt);
+  });
+
+  it('a plan that ended leaves with the next re-check', async () => {
+    const me = await signedInHolding(['note']);
+    meAnswer = { id: ME, who: me, entitled: [] };
+    await authStore.recheckAccount();
+    expect(authStore.subscriptionTier()).toBe('Free');
+    expect(cachedPlan()).toEqual([]);
+  });
+
+  it('an unchanged plan writes nothing', async () => {
+    const me = await signedInHolding(['note', 'track']);
+    const before = local.getItem('pingolin_note_session');
+    local.setItem('pingolin_note_session', `${before} `);
+    meAnswer = { id: ME, who: me, entitled: ['note', 'track'] };
+    await authStore.recheckAccount();
+    expect(local.getItem('pingolin_note_session')).toBe(`${before} `);
+  });
+
+  it('an answer that does not state a list changes nothing', async () => {
+    const me = await signedInHolding(['note']);
+    for (const entitled of [undefined, null, 'note', [1], {}]) {
+      meAnswer = { id: ME, who: me, entitled };
+      await authStore.recheckAccount();
+      expect(authStore.subscriptionTier()).toBe('Premium');
+    }
+    expect(cachedPlan()).toEqual(['note']);
+  });
+
+  it('a re-check that failed changes nothing', async () => {
+    await signedInHolding(['note']);
+    meAnswer = 'throw';
+    await authStore.recheckAccount();
+    meAnswer = { status: 503, json: false };
+    await authStore.recheckAccount();
+    expect(authStore.subscriptionTier()).toBe('Premium');
+  });
+
+  it('a late answer does not put back an older plan', async () => {
+    const me = await signedInHolding([]);
+    let release!: (answer: Response) => void;
+    fetchMock.mockImplementationOnce(() => new Promise<Response>((resolve) => { release = resolve; }));
+    const older = authStore.recheckAccount();
+
+    meAnswer = { id: ME, who: me, entitled: ['note'] };
+    await authStore.recheckAccount();
+    expect(authStore.subscriptionTier()).toBe('Premium');
+
+    release(json(200, {
+      success: true,
+      data: {
+        id: ME,
+        sharing_public_key: b64(me.box.publicKey),
+        signing_public_key: b64(me.sign.publicKey),
+        entitled_products: [],
+      },
+    }));
+    await older;
+    expect(authStore.subscriptionTier()).toBe('Premium');
+    expect(cachedPlan()).toEqual(['note']);
+  });
+
+  it("another account's plan is never taken", async () => {
+    await signedInHolding([]);
+    authStore.adoptPlan({ id: OTHER, entitled_products: ['note'] });
+    authStore.adoptPlan({ entitled_products: ['note'] });
+    expect(authStore.subscriptionTier()).toBe('Free');
+    expect(cachedPlan()).toEqual([]);
+  });
+
+  it('this account in another spelling is still this account', async () => {
+    await signedInHolding([]);
+    authStore.adoptPlan({ id: ME.toUpperCase(), entitled_products: ['note'] });
+    expect(authStore.subscriptionTier()).toBe('Premium');
+  });
+
+  it('the tab of another account stops, and adopts nothing first', async () => {
+    const me = await signedInHolding([]);
+    meAnswer = { id: OTHER, who: me, entitled: ['note'] };
+    await authStore.recheckAccount();
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(authStore.subscriptionTier()).toBe('Free');
+  });
+
+  it('signed out, there is nobody to adopt it for', () => {
+    authStore.adoptPlan({ id: ME, entitled_products: ['note'] });
+    expect(authStore.subscriptionTier()).toBe('Free');
+  });
+});
+
 describe("the portal's key hand-off names the account", () => {
   it('the invalidation of a handed key that does not open carries the account', async () => {
     const posted: { type?: string; account?: string }[] = [];
@@ -435,6 +581,34 @@ describe('the offline resume', () => {
     expect(authStore.isOffline()).toBe(true);
     expect(local.getItem(`pingolin_note_gen_floor.${ME}`)).toBeNull();
     expect(local.getItem('pingolin_note_gen_floor')).toBeNull();
+  });
+
+  it('brings the plan back, so a paying account does not read as free offline', async () => {
+    const me = identity();
+    cacheSession(ME, me);
+    const cached = JSON.parse(local.getItem('pingolin_note_session')!);
+    local.setItem('pingolin_note_session', JSON.stringify({ ...cached, entitled_products: ['note'] }));
+    meAnswer = 'throw';
+    await runCheckAuth();
+    expect(authStore.isOffline()).toBe(true);
+    expect(authStore.subscriptionTier()).toBe('Premium');
+  });
+
+  it.each([
+    [[{ status: 'active', product_slug: 'note' }], 'Premium'],
+    [[{ status: 'trialing', product_slug: 'note' }], 'Premium'],
+    [[{ status: 'canceled', product_slug: 'note' }], 'Free'],
+    [[{ status: 'active', product_slug: 'track' }], 'Free'],
+    [[], 'Free'],
+    [undefined, 'Free'],
+  ])('a session cached by an older build: %j reads as %s', async (subscriptions, tier) => {
+    const me = identity();
+    cacheSession(ME, me);
+    const cached = JSON.parse(local.getItem('pingolin_note_session')!);
+    local.setItem('pingolin_note_session', JSON.stringify({ ...cached, subscriptions }));
+    meAnswer = 'throw';
+    await runCheckAuth();
+    expect(authStore.subscriptionTier()).toBe(tier);
   });
 
   it('a session cached before the keys were recorded restores no keys', async () => {
