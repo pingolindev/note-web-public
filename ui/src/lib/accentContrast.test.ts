@@ -86,6 +86,14 @@ describe('accent contrast', () => {
     });
   }
 
+  it('a touch cannot repaint a pressed toolbar button', () => {
+    // A touch leaves :hover on the last thing tapped, so a hover rule that reaches
+    // touch devices decides what the button just pressed looks like. On a real
+    // phone it erased the pressed fill until the person tapped something else.
+    expect(CSS.match(/\.fmt-btn:hover/g)).toHaveLength(1);
+    expect(CSS).toMatch(/@media \(hover: hover\) \{\s*\.fmt-btn:hover \{/);
+  });
+
   it('no rule paints hardcoded white on the accent', () => {
     const offenders: string[] = [];
     let depth = 0; let selStart = 0;

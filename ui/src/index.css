@@ -1839,7 +1839,13 @@ body.notes-dragging .note-card-settling {
   flex: 0 0 auto;
   white-space: nowrap;
 }
-.fmt-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+/* Only where a pointer can really hover. A touch leaves :hover on the last
+   thing tapped, and the keyboard's taps are outside the page, so nothing clears
+   it while the person types. A hover style there made the button just pressed
+   the one button that could not show it. */
+@media (hover: hover) {
+  .fmt-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+}
 .fmt-btn.fmt-active {
   background: var(--accent-color);
   color: var(--on-primary);
@@ -4769,11 +4775,10 @@ li.checked { text-decoration: line-through; color: var(--text-muted); }
   .filter-chip svg { width: 24px; height: 24px; }
 
   /* Touch has no hover: after a tap the browser keeps :hover applied until
-     the next touch elsewhere, which reads as the toolbar button staying
+     the next touch elsewhere, which reads as the control staying
      "highlighted". Neutralize hover styling where hovering does not exist;
      real feedback on touch is the :active press state. */
   @media (hover: none) {
-    .fmt-btn:hover { background: none; color: inherit; }
     /* The card strip / select circle rules live in the TOP-LEVEL
        `@media (hover: none)` block above ("Touch: the card's hover-revealed
        controls do not exist"), not under 600px: nested here, a 768px tablet — a
